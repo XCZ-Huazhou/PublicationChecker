@@ -50,11 +50,9 @@
       "box-shadow:0 20px 50px rgba(15,23,42,.25);padding:14px;font-size:13px;line-height:1.45;}",
       ".card.on{display:block;}",
       ".head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px;}",
-      ".head-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}",
       ".title{flex:1;font-weight:700;font-size:14px;word-break:break-word;}",
-      ".if-block{flex:none;display:flex;align-items:baseline;gap:4px;padding:2px 8px;border-radius:8px;background:#111827;color:#fff;}",
-      ".if-label{font-size:10px;font-weight:700;opacity:.85;}",
-      ".if-val{font-size:15px;font-weight:800;line-height:1.2;}",
+      ".if-inline{margin-left:8px;font-size:11px;color:#6b7280;font-weight:600;}",
+      ".if-inline b{color:#111827;font-size:14px;font-weight:800;}",
       ".x{border:0;background:#f3f4f6;color:#6b7280;width:24px;height:24px;border-radius:8px;cursor:pointer;flex:none;}",
       ".x:hover{background:#e5e7eb;color:#111827;}",
       ".meta{color:#6b7280;font-size:12px;margin-bottom:8px;word-break:break-all;}",
@@ -239,17 +237,9 @@
     const xrIsTop = isTopFlag(xr.top);
 
     setCard(
-      '<div class="head-row">' +
-        '<div class="title">' +
+      '<div class="head"><div class="title">' +
         esc(j.name || "未知期刊") +
-        "</div>" +
-        (jcr.if
-          ? '<div class="if-block"><span class="if-label">IF</span><span class="if-val">' +
-            esc(jcr.if) +
-            "</span></div>"
-          : "") +
-        '<button class="x" type="button">×</button>' +
-        "</div>" +
+        '</div><button class="x" type="button">×</button></div>' +
         '<div class="meta">ISSN ' +
         esc(j.issn || "—") +
         (j.eissn ? " · E-ISSN " + esc(j.eissn) : "") +
@@ -260,6 +250,9 @@
         '<div class="grid">' +
         '<div class="cell"><div class="lab">JCR 2025</div><div class="val">' +
         esc(best || "—") +
+        (jcr.if
+          ? ' <span class="if-inline">IF <b>' + esc(jcr.if) + "</b></span>"
+          : "") +
         '</div><div class="sub">' +
         (jcrCats || "—") +
         "</div></div>" +

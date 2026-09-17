@@ -66,10 +66,7 @@ function renderBest(hit) {
   $("best").innerHTML = `
     <div class="title-row">
       <div>
-        <div class="title-head">
-          <h2>${esc(j.name)}</h2>
-          ${jcr.if ? `<div class="if-block"><span class="if-label">IF</span><span class="if-val">${esc(jcr.if)}</span></div>` : ""}
-        </div>
+        <h2>${esc(j.name)}</h2>
         ${j.cn ? `<p class="meta-line">${esc(j.cn)}</p>` : ""}
         <p class="meta-line">
           ISSN ${esc(j.issn || "—")}
@@ -82,7 +79,7 @@ function renderBest(hit) {
     <div class="grid">
       <div class="cell">
         <div class="label">JCR 分区（2025）</div>
-        <div class="value">${qText(best)}</div>
+        <div class="value">${qText(best)}${jcr.if ? ` <span class="if-inline">IF <b>${esc(jcr.if)}</b></span>` : ""}</div>
         <div class="detail">${jcrCats || "—"}</div>
       </div>
       <div class="cell">

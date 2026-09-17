@@ -137,41 +137,17 @@ body {
   line-height: 1.35;
 }
 
-.title-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+.if-inline {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
 }
 
-.title-head h2 {
-  flex: 1;
-  margin: 0;
-  font-size: 1.2rem;
-  line-height: 1.35;
-}
-
-.if-block {
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: #111827;
-  color: #fff;
-}
-
-.if-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  opacity: 0.85;
-}
-
-.if-val {
-  font-size: 1.25rem;
+.if-inline b {
+  color: var(--ink);
+  font-size: 1.05rem;
   font-weight: 800;
-  line-height: 1.2;
 }
 
 .badges {
