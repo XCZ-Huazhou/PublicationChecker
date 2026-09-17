@@ -16,7 +16,9 @@
   let lastRect = null;
 
   function api() {
-    return typeof browser !== "undefined" && browser?.runtime ? browser : chrome;
+    return typeof browser !== "undefined" && browser && browser.runtime
+      ? browser
+      : chrome;
   }
 
   function ensureDom() {

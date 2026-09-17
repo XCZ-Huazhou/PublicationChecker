@@ -12,7 +12,7 @@ function zoneClass(zone) {
 }
 
 function esc(s) {
-  return String(s ?? "")
+  return String(s == null ? "" : s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -121,18 +121,18 @@ function renderOthers(hits) {
   const items = hits
     .map((h, idx) => {
       const j = h.journal;
-      const jcr = j.jcr?.best || "";
-      const cas = j.cas?.zone || "";
-      const xr = j.xr?.zone || "";
+      const jcr = j.jcr || {};
+      const cas = j.cas || {};
+      const xr = j.xr || {};
       return `
         <div class="item" data-idx="${idx}">
           <div class="name">${esc(j.name)}</div>
           <div class="row">
             <span>ISSN ${esc(j.issn || "—")}</span>
-            <span>JCR ${qText(jcr)}</span>
-            <span>中科院 ${zoneText(cas)}</span>
-            <span>新锐 ${zoneText(xr)}</span>
-            ${j.jcr?.if ? `<span>IF ${esc(j.jcr.if)}</span>` : ""}
+            <span>JCR ${qText(jcr.best || "")}</span>
+            <span>中科院 ${zoneText(cas.zone || "")}</span>
+            <span>新锐 ${zoneText(xr.zone || "")}</span>
+            ${jcr.if ? `<span>IF ${esc(jcr.if)}</span>` : ""}
           </div>
         </div>
       `;
@@ -181,8 +181,9 @@ async function run(raw) {
 
   try {
     const res = await searchJournals(q, 12);
-    $("meta").textContent = res.meta?.count
-      ? `本地库：${res.meta.count} 种期刊 · JCR ${res.meta.jcr} · 中科院 ${res.meta.cas} · 新锐 ${res.meta.xinrui} · 数据源 hitfyd/ShowJCR`
+    const meta = res.meta || {};
+    $("meta").textContent = meta.count
+      ? `本地库：${meta.count} 种期刊 · JCR ${meta.jcr} · 中科院 ${meta.cas} · 新锐 ${meta.xinrui} · 数据源 hitfyd/ShowJCR`
       : "本地库已加载";
 
     if (!res.hits.length) {

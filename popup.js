@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 
 function esc(s) {
-  return String(s ?? "")
+  return String(s == null ? "" : s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
@@ -23,14 +23,17 @@ async function run() {
     const top = res.hits[0];
     const j = top.journal;
     $("result").hidden = false;
+    const jj = j.jcr || {};
+    const cc = j.cas || {};
+    const xx = j.xr || {};
     $("result").innerHTML = `
       <div class="name">${esc(j.name)}</div>
       <div>ISSN ${esc(j.issn || "—")}</div>
       <div>
-        <span class="badge">JCR ${esc(j.jcr?.best || "—")}</span>
-        <span class="badge">中科院 ${esc(j.cas?.zone || "未收录")}</span>
-        <span class="badge">新锐 ${esc(j.xr?.zone || "—")}</span>
-        ${j.jcr?.if ? `<span class="badge">IF ${esc(j.jcr.if)}</span>` : ""}
+        <span class="badge">JCR ${esc(jj.best || "—")}</span>
+        <span class="badge">中科院 ${esc(cc.zone || "未收录")}</span>
+        <span class="badge">新锐 ${esc(xx.zone || "—")}</span>
+        ${jj.if ? `<span class="badge">IF ${esc(jj.if)}</span>` : ""}
       </div>
     `;
   } catch (err) {

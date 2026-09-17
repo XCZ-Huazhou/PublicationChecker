@@ -2,7 +2,10 @@
 importScripts("lib/search-core.js");
 
 const MENU_ID = "publication-checker-lookup";
-const api = typeof browser !== "undefined" && browser?.runtime ? browser : chrome;
+const api =
+  typeof browser !== "undefined" && browser && browser.runtime
+    ? browser
+    : chrome;
 
 function openFallbackPage(query) {
   const url =
