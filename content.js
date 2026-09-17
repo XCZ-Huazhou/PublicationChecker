@@ -250,20 +250,18 @@
         '<div class="grid">' +
         '<div class="cell"><div class="lab">JCR 2025</div><div class="val">' +
         esc(best || "—") +
-        (jcr.if
-          ? ' <span class="if-inline">IF <b>' + esc(jcr.if) + "</b></span>"
-          : "") +
         '</div><div class="sub">' +
         (jcrCats || "—") +
+        (jcr.if
+          ? "<br><span class=\"if-inline\">IF <b>" + esc(jcr.if) + "</b></span>"
+          : "") +
         "</div></div>" +
         '<div class="cell"><div class="lab">中科院 2025升级版</div><div class="val">' +
         esc(cas.zone || "未收录") +
         '</div><div class="sub">' +
         (cas.zone
           ? esc(cas.major || "") +
-            (casIsTop
-              ? ' · Top <span class="top-tag">Top</span>'
-              : "") +
+            (casIsTop ? ' <span class="top-tag">Top</span>' : "") +
             "<br>" +
             (casMinors || "—")
           : (jcr.wos && /ESCI|AHCI|ESCI/i.test(jcr.wos)
