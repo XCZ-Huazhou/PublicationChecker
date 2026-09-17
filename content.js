@@ -61,9 +61,7 @@
       ".badge.warn{background:#fee2e2;color:#b91c1c;}",
       ".grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}",
       ".cell{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;}",
-      ".cell.is-top{background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);border-color:#fdba74;box-shadow:inset 0 0 0 1px rgba(251,146,60,.25);}",
-      ".cell.is-top .val{color:#c2410c;}",
-      ".cell.is-top .top-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#c2410c;color:#fff;font-size:10px;font-weight:700;vertical-align:middle;}",
+      ".top-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#c2410c;color:#fff;font-size:10px;font-weight:700;vertical-align:middle;}",
       ".lab{color:#6b7280;font-size:11px;}.val{font-weight:700;font-size:15px;margin-top:2px;}",
       ".sub{color:#6b7280;font-size:11px;margin-top:2px;word-break:break-word;}",
       ".status{color:#4b5563;}",
@@ -252,28 +250,27 @@
         (jcrCats || "—") +
         (jcr.if ? "<br>IF " + esc(jcr.if) : "") +
         "</div></div>" +
-        '<div class="cell' +
-        (casIsTop ? " is-top" : "") +
-        '"><div class="lab">中科院 2025升级版</div><div class="val">' +
+        '<div class="cell"><div class="lab">中科院 2025升级版</div><div class="val">' +
         esc(cas.zone || "未收录") +
-        (casIsTop ? '<span class="top-tag">Top</span>' : "") +
         '</div><div class="sub">' +
         (cas.zone
           ? esc(cas.major || "") +
-            (cas.top ? " · Top " + esc(cas.top) : "") +
+            (cas.top
+              ? " · Top " +
+                esc(cas.top) +
+                (casIsTop ? '<span class="top-tag">Top</span>' : "")
+              : "") +
             "<br>" +
             (casMinors || "—")
           : (jcr.wos && /ESCI|AHCI|ESCI/i.test(jcr.wos)
               ? "源数据未收录（该刊多为 " + esc(jcr.wos) + "）"
               : "源数据未收录于中科院2025升级版")) +
         "</div></div>" +
-        '<div class="cell' +
-        (xrIsTop ? " is-top" : "") +
-        '"><div class="lab">新锐 2026</div><div class="val">' +
+        '<div class="cell"><div class="lab">新锐 2026</div><div class="val">' +
         esc(xr.zone || "—") +
-        (xrIsTop ? '<span class="top-tag">Top</span>' : "") +
         '</div><div class="sub">' +
         esc(xr.major || "") +
+        (xrIsTop ? '<span class="top-tag">Top</span>' : "") +
         "<br>" +
         (xrMinors || "—") +
         "</div></div>" +

@@ -82,24 +82,24 @@ function renderBest(hit) {
         <div class="value">${qText(best)}</div>
         <div class="detail">${jcrCats || "—"}${jcr.if ? `<br>IF ${esc(jcr.if)}` : ""}</div>
       </div>
-      <div class="cell${isTopFlag(cas.top) ? " is-top" : ""}">
+      <div class="cell">
         <div class="label">中科院分区（2025升级版）</div>
-        <div class="value">${cas.zone ? zoneText(cas.zone) : "未收录"}${isTopFlag(cas.top) ? '<span class="top-tag">Top</span>' : ""}</div>
+        <div class="value">${cas.zone ? zoneText(cas.zone) : "未收录"}</div>
         <div class="detail">
           ${
             cas.zone
-              ? `${esc(cas.major || "—")}${cas.top ? ` · Top ${esc(cas.top)}` : ""}<br>${casMinors || "—"}`
+              ? `${esc(cas.major || "—")}${cas.top ? ` · Top ${esc(cas.top)}${isTopFlag(cas.top) ? '<span class="top-tag">Top</span>' : ""}` : ""}<br>${casMinors || "—"}`
               : jcr.wos && /ESCI|AHCI/i.test(jcr.wos)
                 ? `源数据未收录（该刊多为 ${esc(jcr.wos)}）`
                 : "源数据未收录于中科院2025升级版"
           }
         </div>
       </div>
-      <div class="cell${isTopFlag(xr.top) ? " is-top" : ""}">
+      <div class="cell">
         <div class="label">新锐分区（2026）</div>
-        <div class="value">${zoneText(xr.zone)}${isTopFlag(xr.top) ? '<span class="top-tag">Top</span>' : ""}</div>
+        <div class="value">${zoneText(xr.zone)}</div>
         <div class="detail">
-          ${esc(xr.major || "—")}
+          ${esc(xr.major || "—")}${isTopFlag(xr.top) ? '<span class="top-tag">Top</span>' : ""}
           <br>${xrMinors || "—"}
         </div>
       </div>
