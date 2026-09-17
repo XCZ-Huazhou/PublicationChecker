@@ -142,8 +142,9 @@ body {
   margin-left: 10px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #2d5ac8;
-  color: #fff;
+  background: #e8eefc;
+  color: #2d5ac8;
+  border: 1px solid #c7d2fe;
   font-size: 0.78rem;
   font-weight: 700;
   vertical-align: middle;
@@ -153,6 +154,7 @@ body {
   font-size: 0.95rem;
   font-weight: 800;
   margin-left: 2px;
+  color: #1e3a8a;
 }
 
 .if-inline {
