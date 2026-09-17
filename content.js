@@ -188,6 +188,7 @@
         '<span class="badge ' + zoneCls(xr.zone) + '">新锐 ' + esc(xr.zone) + "</span>"
       );
     if (j.warn) badges.push('<span class="badge warn">预警 ' + esc(j.warn) + "</span>");
+    if (xr.warn) badges.push('<span class="badge warn">新锐标记 ' + esc(xr.warn) + "</span>");
 
     const jcrCats = (jcr.cats || [])
       .slice(0, 3)
