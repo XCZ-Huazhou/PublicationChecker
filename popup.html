@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PublicationChecker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="popup">
+      <header>
+        <span class="logo">P</span>
+        <div>
+          <strong>PublicationChecker</strong>
+          <div class="hint">离线查 JCR / 中科院 / 新锐分区</div>
+        </div>
+      </header>
+      <div class="row">
+        <input id="q" type="search" placeholder="期刊名或 ISSN" autofocus />
+        <button id="go">查询</button>
+      </div>
+      <p class="tip">网页中选中文字后右键 →「查询期刊分区」更快。</p>
+      <div id="status" class="status" hidden></div>
+      <div id="result" class="result" hidden></div>
+    </div>
+    <script src="lib/search-core.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

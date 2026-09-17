@@ -1,0 +1,21 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Optional: large raw CSVs (rebuild only). Uncomment if you do not want them in git.
+# raw/
+
+# Local notes
+*.log
+.env

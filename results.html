@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>期刊分区查询</title>
+    <link rel="stylesheet" href="results.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <div class="brand">
+          <span class="logo">P</span>
+          <div>
+            <h1>PublicationChecker</h1>
+            <p class="sub">离线查询 JCR · 中科院 · 新锐分区</p>
+          </div>
+        </div>
+        <div class="search-box">
+          <input
+            id="q"
+            type="search"
+            placeholder="输入期刊名或 ISSN…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="go" type="button">查询</button>
+        </div>
+      </header>
+
+      <div id="status" class="status" hidden></div>
+      <div id="best" class="best" hidden></div>
+      <section id="others" class="others" hidden></section>
+      <footer class="footer" id="meta"></footer>
+    </div>
+    <script src="lib/search-core.js"></script>
+    <script src="results.js"></script>
+  </body>
+</html>

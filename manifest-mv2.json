@@ -1,0 +1,46 @@
+{
+  "manifest_version": 2,
+  "name": "PublicationChecker 期刊分区查询",
+  "version": "1.5.1",
+  "description": "选中期刊名后右键，当前页浮层显示 JCR / 中科院 / 新锐分区。约 1.2MB 本地库，离线检索。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_action": {
+    "default_title": "PublicationChecker 期刊分区查询",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "scripts": ["lib/search-core.js", "background-mv2.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "tabs",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "web_accessible_resources": [
+    "data/journals.json.gz",
+    "results.html",
+    "lib/search-core.js"
+  ]
+}
