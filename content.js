@@ -292,7 +292,7 @@
         }
         const hits = res.hits || [];
         if (!hits.length) {
-          showStatus("未找到「" + query + "」，请试完整英文刊名或 ISSN", lastRect);
+          showStatus("未找到「" + query + "」。请尽量选中完整英文期刊名，或用 ISSN 查询。", lastRect);
           return;
         }
         cardEl.__hits = hits;
