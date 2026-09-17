@@ -1,5 +1,4 @@
 const $ = (id) => document.getElementById(id);
-const api = typeof browser !== "undefined" && browser?.runtime ? browser : chrome;
 
 function esc(s) {
   return String(s ?? "")
@@ -33,13 +32,7 @@ async function run() {
         <span class="badge">新锐 ${esc(j.xr?.zone || "—")}</span>
         ${j.jcr?.if ? `<span class="badge">IF ${esc(j.jcr.if)}</span>` : ""}
       </div>
-      <div class="more" id="openFull">打开完整结果页</div>
     `;
-    $("openFull").addEventListener("click", () => {
-      const url =
-        api.runtime.getURL("results.html") + "?q=" + encodeURIComponent(q);
-      api.tabs.create({ url });
-    });
   } catch (err) {
     $("status").textContent = "失败：" + (err.message || err);
   }

@@ -262,12 +262,7 @@
         esc(jcr.if || "—") +
         '</div><div class="sub">JCR 2025</div></div>' +
         "</div>" +
-        (others ? '<div class="list">' + others + "</div>" : "") +
-        '<div class="foot"><a href="' +
-        api().runtime.getURL("results.html") +
-        "?q=" +
-        encodeURIComponent(query || j.name || "") +
-        '" target="_blank" rel="noreferrer">完整结果页</a></div>'
+        (others ? '<div class="list">' + others + "</div>" : "")
     );
     place(cardEl, lastRect, 10);
   }

@@ -1,6 +1,5 @@
 const $ = (id) => document.getElementById(id);
 const searchJournals = (q, n) => PublicationChecker.searchJournals(q, n);
-const letpubSearchUrl = (n) => PublicationChecker.letpubSearchUrl(n);
 const cleanQuery = (q) => PublicationChecker.cleanQuery(q);
 
 function zoneClass(zone) {
@@ -104,9 +103,6 @@ function renderBest(hit) {
         <div class="value">${esc(jcr.if || "—")}</div>
         <div class="detail">数据年份：JCR 2025</div>
       </div>
-    </div>
-    <div class="links">
-      <a href="${letpubSearchUrl(j.name)}" target="_blank" rel="noreferrer">在 LetPub 查看详情</a>
     </div>
   `;
   $("best").hidden = false;
