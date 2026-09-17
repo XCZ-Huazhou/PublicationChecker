@@ -51,6 +51,8 @@
       ".card.on{display:block;}",
       ".head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px;}",
       ".title{flex:1;font-weight:700;font-size:14px;word-break:break-word;}",
+      ".if-pill{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:#111827;color:#fff;font-size:11px;font-weight:700;vertical-align:middle;}",
+      ".if-pill b{font-size:13px;font-weight:800;margin-left:2px;}",
       ".if-inline{margin-left:8px;font-size:11px;color:#6b7280;font-weight:600;}",
       ".if-inline b{color:#111827;font-size:14px;font-weight:800;}",
       ".x{border:0;background:#f3f4f6;color:#6b7280;width:24px;height:24px;border-radius:8px;cursor:pointer;flex:none;}",
@@ -250,11 +252,11 @@
         '<div class="grid">' +
         '<div class="cell"><div class="lab">JCR 2025</div><div class="val">' +
         esc(best || "—") +
+        (jcr.if
+          ? '<span class="if-pill">IF <b>' + esc(jcr.if) + "</b></span>"
+          : "") +
         '</div><div class="sub">' +
         (jcrCats || "—") +
-        (jcr.if
-          ? "<br><span class=\"if-inline\">IF <b>" + esc(jcr.if) + "</b></span>"
-          : "") +
         "</div></div>" +
         '<div class="cell"><div class="lab">中科院 2025升级版</div><div class="val">' +
         esc(cas.zone || "未收录") +

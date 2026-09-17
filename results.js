@@ -79,8 +79,8 @@ function renderBest(hit) {
     <div class="grid">
       <div class="cell">
         <div class="label">JCR 分区（2025）</div>
-        <div class="value">${qText(best)}</div>
-        <div class="detail">${jcrCats || "—"}${jcr.if ? `<br><span class="if-inline">IF <b>${esc(jcr.if)}</b></span>` : ""}</div>
+        <div class="value">${qText(best)}${jcr.if ? `<span class="if-pill">IF <b>${esc(jcr.if)}</b></span>` : ""}</div>
+        <div class="detail">${jcrCats || "—"}</div>
       </div>
       <div class="cell">
         <div class="label">中科院分区（2025升级版）</div>
