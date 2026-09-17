@@ -198,6 +198,28 @@ body {
   padding: 12px 14px;
 }
 
+.cell.is-top {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fdba74;
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.25);
+}
+
+.cell.is-top .value {
+  color: #c2410c;
+}
+
+.top-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .cell .label {
   color: var(--muted);
   font-size: 0.78rem;

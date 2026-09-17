@@ -29,6 +29,11 @@ function qText(q) {
   return esc(String(q).toUpperCase());
 }
 
+function isTopFlag(v) {
+  const s = String(v || "").trim();
+  return s === "是" || s === "Yes" || s === "YES" || s === "Top";
+}
+
 function renderBest(hit) {
   const j = hit.journal;
   const jcr = j.jcr || {};
@@ -77,9 +82,9 @@ function renderBest(hit) {
         <div class="value">${qText(best)}</div>
         <div class="detail">${jcrCats || "—"}${jcr.if ? `<br>IF ${esc(jcr.if)}` : ""}</div>
       </div>
-      <div class="cell">
+      <div class="cell${isTopFlag(cas.top) ? " is-top" : ""}">
         <div class="label">中科院分区（2025升级版）</div>
-        <div class="value">${cas.zone ? zoneText(cas.zone) : "未收录"}</div>
+        <div class="value">${cas.zone ? zoneText(cas.zone) : "未收录"}${isTopFlag(cas.top) ? '<span class="top-tag">Top</span>' : ""}</div>
         <div class="detail">
           ${
             cas.zone
@@ -90,9 +95,9 @@ function renderBest(hit) {
           }
         </div>
       </div>
-      <div class="cell">
+      <div class="cell${isTopFlag(xr.top) ? " is-top" : ""}">
         <div class="label">新锐分区（2026）</div>
-        <div class="value">${zoneText(xr.zone)}</div>
+        <div class="value">${zoneText(xr.zone)}${isTopFlag(xr.top) ? '<span class="top-tag">Top</span>' : ""}</div>
         <div class="detail">
           ${esc(xr.major || "—")}
           <br>${xrMinors || "—"}
