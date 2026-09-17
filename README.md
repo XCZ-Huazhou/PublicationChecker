@@ -45,12 +45,14 @@
 
 ## 安装（开发者模式）
 
+> **注意**：Chrome / Edge 不能直接导入 ZIP，请先解压成文件夹，再「加载已解压的扩展程序」。选择含 `manifest.json` 的那一层目录。
+
 ### Chrome / Edge（推荐，Manifest V3）
 
-1. 下载或克隆本仓库
+1. 下载本仓库（ZIP 需先解压；或直接使用本地目录）
 2. Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`）
 3. 打开「开发者模式」
-4. 「加载已解压的扩展程序」→ 选择本仓库根目录
+4. 「加载已解压的扩展程序」→ 选择解压后的仓库根目录
 
 ### 360 极速 / 旧版 Chromium（Manifest V2）
 
