@@ -41,7 +41,6 @@ function renderBest(hit) {
   const xr = j.xr || {};
   const best = jcr.best || "";
   const badges = [];
-  if (jcr.if) badges.push(`<span class="badge if-badge">IF <b>${esc(jcr.if)}</b></span>`);
   if (best) badges.push(`<span class="badge ${zoneClass(best)}">JCR ${qText(best)}</span>`);
   if (cas.zone) badges.push(`<span class="badge ${zoneClass(cas.zone)}">中科院 ${zoneText(cas.zone)}</span>`);
   if (xr.zone) badges.push(`<span class="badge ${zoneClass(xr.zone)}">新锐 ${zoneText(xr.zone)}</span>`);
@@ -67,7 +66,10 @@ function renderBest(hit) {
   $("best").innerHTML = `
     <div class="title-row">
       <div>
-        <h2>${esc(j.name)}</h2>
+        <div class="title-head">
+          <h2>${esc(j.name)}</h2>
+          ${jcr.if ? `<div class="if-block"><span class="if-label">IF</span><span class="if-val">${esc(jcr.if)}</span></div>` : ""}
+        </div>
         ${j.cn ? `<p class="meta-line">${esc(j.cn)}</p>` : ""}
         <p class="meta-line">
           ISSN ${esc(j.issn || "—")}
