@@ -88,7 +88,7 @@ function renderBest(hit) {
         <div class="detail">
           ${
             cas.zone
-              ? `${esc(cas.major || "—")}${cas.top ? ` · Top ${esc(cas.top)}${isTopFlag(cas.top) ? '<span class="top-tag">Top</span>' : ""}` : ""}<br>${casMinors || "—"}`
+              ? `${esc(cas.major || "—")}${isTopFlag(cas.top) ? ` · Top <span class="top-tag">Top</span>` : ""}<br>${casMinors || "—"}`
               : jcr.wos && /ESCI|AHCI/i.test(jcr.wos)
                 ? `源数据未收录（该刊多为 ${esc(jcr.wos)}）`
                 : "源数据未收录于中科院2025升级版"

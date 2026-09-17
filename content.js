@@ -261,10 +261,8 @@
         '</div><div class="sub">' +
         (cas.zone
           ? esc(cas.major || "") +
-            (cas.top
-              ? " · Top " +
-                esc(cas.top) +
-                (casIsTop ? '<span class="top-tag">Top</span>' : "")
+            (casIsTop
+              ? ' · Top <span class="top-tag">Top</span>'
               : "") +
             "<br>" +
             (casMinors || "—")

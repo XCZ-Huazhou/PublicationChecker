@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "PublicationChecker 期刊分区查询",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "浏览网页时选中完整期刊名并右键，当前页即可查 JCR / 中科院 / 新锐分区与影响因子，无需另开查询网站。",
   "icons": {
     "16": "icons/icon16.png",
