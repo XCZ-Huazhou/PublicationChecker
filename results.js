@@ -41,10 +41,11 @@ function renderBest(hit) {
   const xr = j.xr || {};
   const best = jcr.best || "";
   const badges = [];
+  if (jcr.if) badges.push(`<span class="badge if-badge">IF <b>${esc(jcr.if)}</b></span>`);
   if (best) badges.push(`<span class="badge ${zoneClass(best)}">JCR ${qText(best)}</span>`);
   if (cas.zone) badges.push(`<span class="badge ${zoneClass(cas.zone)}">中科院 ${zoneText(cas.zone)}</span>`);
   if (xr.zone) badges.push(`<span class="badge ${zoneClass(xr.zone)}">新锐 ${zoneText(xr.zone)}</span>`);
-  if (String(cas.top || xr.top).includes("是") || cas.top === "Yes" || xr.top === "是") {
+  if (isTopFlag(cas.top) || isTopFlag(xr.top)) {
     badges.push(`<span class="badge top">Top 期刊</span>`);
   }
   if (j.warn) badges.push(`<span class="badge warn">2025预警：${esc(j.warn)}</span>`);
@@ -80,7 +81,7 @@ function renderBest(hit) {
       <div class="cell">
         <div class="label">JCR 分区（2025）</div>
         <div class="value">${qText(best)}</div>
-        <div class="detail">${jcrCats || "—"}${jcr.if ? `<br>IF ${esc(jcr.if)}` : ""}</div>
+        <div class="detail">${jcrCats || "—"}</div>
       </div>
       <div class="cell">
         <div class="label">中科院分区（2025升级版）</div>
@@ -104,9 +105,13 @@ function renderBest(hit) {
         </div>
       </div>
       <div class="cell">
-        <div class="label">影响因子 IF</div>
-        <div class="value">${esc(jcr.if || "—")}</div>
-        <div class="detail">数据年份：JCR 2025</div>
+        <div class="label">收录与出版</div>
+        <div class="value">${esc(jcr.wos || "—")}</div>
+        <div class="detail">
+          ${j.review && /是|Yes/i.test(j.review) ? "综述期刊 · " : ""}${j.lang ? esc(j.lang) : ""}
+          ${j.publisher ? `<br>${esc(j.publisher)}` : ""}
+          ${j.cn ? `<br>中文名：${esc(j.cn)}` : ""}
+        </div>
       </div>
     </div>
   `;

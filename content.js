@@ -59,6 +59,8 @@
       ".badge.q1{background:#d1fae5;color:#0f766e;}.badge.q2{background:#dbeafe;color:#0369a1;}",
       ".badge.q3{background:#fef3c7;color:#b45309;}.badge.q4{background:#f3f4f6;color:#6b7280;}",
       ".badge.warn{background:#fee2e2;color:#b91c1c;}",
+      ".badge.if-badge{background:#111827;color:#fff;}",
+      ".badge.if-badge b{font-size:12px;}",
       ".grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}",
       ".cell{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;}",
       ".top-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#c2410c;color:#fff;font-size:10px;font-weight:700;vertical-align:middle;}",
@@ -171,6 +173,8 @@
     const xr = j.xr || {};
     const best = jcr.best || "";
     const badges = [];
+    if (jcr.if)
+      badges.push('<span class="badge if-badge">IF <b>' + esc(jcr.if) + "</b></span>");
     if (best)
       badges.push('<span class="badge ' + zoneCls(best) + '">JCR ' + esc(best) + "</span>");
     if (cas.zone)
@@ -186,7 +190,7 @@
     const jcrCats = (jcr.cats || [])
       .slice(0, 3)
       .map(function (c) {
-        return esc(c[0] || "") + " " + esc(c[1] || "");
+        return esc(c[0] || "") + " " + esc(c[1] || "") + (c[2] ? " · " + esc(c[2]) : "");
       })
       .join("<br>");
     const casMinors = (cas.minors || [])
@@ -248,7 +252,6 @@
         esc(best || "—") +
         '</div><div class="sub">' +
         (jcrCats || "—") +
-        (jcr.if ? "<br>IF " + esc(jcr.if) : "") +
         "</div></div>" +
         '<div class="cell"><div class="lab">中科院 2025升级版</div><div class="val">' +
         esc(cas.zone || "未收录") +
@@ -274,9 +277,14 @@
         "<br>" +
         (xrMinors || "—") +
         "</div></div>" +
-        '<div class="cell"><div class="lab">影响因子 IF</div><div class="val">' +
-        esc(jcr.if || "—") +
-        '</div><div class="sub">JCR 2025</div></div>' +
+        '<div class="cell"><div class="lab">收录与出版</div><div class="val">' +
+        esc(jcr.wos || "—") +
+        '</div><div class="sub">' +
+        (j.review && /是|Yes/i.test(j.review) ? "综述期刊 · " : "") +
+        (j.lang ? esc(j.lang) + "<br>" : "") +
+        (j.publisher ? esc(j.publisher) : "") +
+        (j.cn ? (j.publisher ? "<br>" : "") + "中文名：" + esc(j.cn) : "") +
+        "</div></div>" +
         "</div>" +
         (others ? '<div class="list">' + others + "</div>" : "")
     );

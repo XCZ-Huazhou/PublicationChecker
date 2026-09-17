@@ -177,6 +177,13 @@ body {
   background: #fee2e2;
   color: var(--warn);
 }
+.badge.if-badge {
+  background: #111827;
+  color: #fff;
+}
+.badge.if-badge b {
+  font-size: 0.95rem;
+}
 
 .meta-line {
   color: var(--muted);

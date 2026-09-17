@@ -139,6 +139,7 @@ def load_cas(path: Path, index: Index) -> None:
                 "zone": major_zone,
                 "rank": major_rank,
                 "top": (row.get("Top") or "").strip(),
+                "review": (row.get("Review") or "").strip(),
                 "minors": minors[:3],
             }
 
@@ -169,6 +170,8 @@ def load_xinrui(path: Path, index: Index) -> None:
                 "zone": (row.get("大类新锐分区") or "").strip().replace(" ", ""),
                 "top": (row.get("Top") or "").strip(),
                 "warn": (row.get("预警标记") or "").strip(),
+                "publisher": (row.get("出版机构") or "").strip(),
+                "lang": (row.get("语种") or "").strip(),
                 "minors": minors[:3],
             }
 
@@ -212,7 +215,8 @@ def main() -> None:
         # row layout
         # 0 name, 1 issn, 2 eissn, 3 if, 4 jcrQ, 5 wos, 6 jcrCats,
         # 7 casZ, 8 casMajor, 9 casTop, 10 casMinors,
-        # 11 xrZ, 12 xrMajor, 13 xrTop, 14 warn, 15 cn, 16 xrMinors
+        # 11 xrZ, 12 xrMajor, 13 xrTop, 14 warn, 15 cn, 16 xrMinors,
+        # 17 publisher, 18 review(综述), 19 lang
         row = [
             name,
             rec.get("issn") or "",
@@ -231,6 +235,9 @@ def main() -> None:
             warn,
             rec.get("cn") or "",
             pack_pairs(xr.get("minors") or []),
+            (xr.get("publisher") or "")[:80],
+            cas.get("review") or "",
+            xr.get("lang") or "",
         ]
         idx = len(rows)
         rows.append(row)
