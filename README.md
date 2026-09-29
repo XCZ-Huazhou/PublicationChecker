@@ -47,7 +47,16 @@
 
 > **注意**：Chrome / Edge 不能直接导入 ZIP，请先解压成文件夹，再「加载已解压的扩展程序」。选择含 `manifest.json` 的那一层目录。
 
-### Chrome / Edge（推荐，Manifest V3）
+### 方式一：下载打包好的版本（推荐）
+
+到 [Releases](../../releases) 页面下载：
+
+| 文件 | 适用环境 |
+|------|----------|
+| `PublicationChecker-chrome-*.zip` | Chrome / Edge 等现代 Chromium（解压后开发者模式加载） |
+| `PublicationChecker-firefox-*.xpi` | Firefox 115+ / Zen / 其他支持 MV2 的浏览器（拖入安装） |
+
+### 方式二：从源码加载
 
 1. 下载本仓库（ZIP 需先解压；或直接使用本地目录）
 2. Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`）
@@ -81,15 +90,49 @@
 - 数据：`data/journals.json.gz`（紧凑数组 + gzip）
 - 检索：前缀索引 + 兜底扫描，首次解压后缓存
 
-## 更新数据
+## 数据与自定义
 
-原始 CSV 来自开源项目 [hitfyd/ShowJCR](https://github.com/hitfyd/ShowJCR)，置于 `raw/`（可选，重建时使用）。
+### 数据管线
 
-```bash
-python tools/build_db.py
+安装包里带的是**编译好的离线数据库**，装上即可用：
+
+```
+raw/*.csv（原始分区表，仅仓库内，不进安装包）
+        │  python tools/build_db.py
+        ▼
+data/journals.json.gz（约 1.5 MB，23059 刊）← 插件运行时只读这一份
+        │  node build-chrome.js / node build-firefox.js
+        ▼
+Chrome zip / Firefox xpi 安装包
 ```
 
-然后在扩展管理页点击重新加载。
+原始 CSV 来自开源项目 [hitfyd/ShowJCR](https://github.com/hitfyd/ShowJCR)，置于 `raw/`。**直接改 CSV 不会影响已发布的安装包**——CSV 是生数据，插件只读编译产物；改完必须重新生成并重新打包。
+
+### 环境要求
+
+- Python 3（仅标准库，任意发行版均可；QGIS/ArcGIS 自带的也能用）
+- Node.js（仅打包时用，数据重建本身不需要）
+
+### 例：去掉中科院分区数据
+
+1. 编辑 `tools/build_db.py`，把这一行注释掉：
+
+   ```python
+   load_cas(RAW / "FQBJCR2025-UTF8.csv", index)
+   ```
+
+2. 重新生成数据库并打包：
+
+   ```bash
+   python tools/build_db.py      # 输出统计里 cas=0 即生效
+   node build-chrome.js          # 或 node build-firefox.js
+   ```
+
+3. 重新加载扩展即可。前端对所有缺失字段判空，去掉的来源会显示「未收录」，不会报错。
+
+### 例：只删部分期刊或某些列
+
+直接编辑 `raw/` 下的 CSV——脚本按**列名**读取，删行、删列都可以，缺失列自动按空值处理；某本期刊若在所有来源里都被删光，则不会入库。改完同样跑一遍上面的重建 + 打包流程。
 
 ## 目录结构
 
@@ -102,15 +145,18 @@ PublicationChecker/
   content.js             # 当前页浮层
   popup.* / results.*    # 工具栏弹窗与完整结果页
   lib/search-core.js     # 离线检索核心
-  data/journals.json.gz  # 本地期刊库
+  data/journals.json.gz  # 本地期刊库（编译产物）
   tools/build_db.py      # 数据重建脚本
-  raw/                   # 原始 CSV（可选）
+  build-chrome.js        # 打包 Chrome zip
+  build-firefox.js       # 打包 Firefox xpi
+  raw/                   # 原始 CSV（生数据，仅重建时使用）
 ```
 
 ## 技术栈
 
 - Chrome Extension（Manifest V3 + V2 双清单，JavaScript）
-- 数据构建：Python
+- 数据构建：Python（纯标准库）
+- 打包：Node.js + zip
 
 ## 免责声明
 
