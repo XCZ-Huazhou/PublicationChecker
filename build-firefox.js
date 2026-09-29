@@ -17,7 +17,7 @@ const XPI_OUT = path.join(SRC, '..', 'PublicationChecker-firefox.xpi');
 // 1. staging：完整复制后剔除源数据与仓库元数据（raw/tools 为源数据，不进包）
 fs.rmSync(STAGE, { recursive: true, force: true });
 fs.cpSync(SRC, STAGE, { recursive: true });
-for (const skip of ['.git', 'raw', 'tools', 'build-firefox.js', 'build-chrome.js', '.gitignore']) {
+for (const skip of ['.git', '.gitignore', 'raw', 'tools', 'build-firefox.js', 'build-chrome.js', 'data/journals.json']) {
   fs.rmSync(path.join(STAGE, skip), { recursive: true, force: true });
 }
 

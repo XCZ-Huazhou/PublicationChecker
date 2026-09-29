@@ -17,7 +17,8 @@ fs.cpSync(SRC, STAGE, { recursive: true });
 for (const skip of [
   '.git', '.gitignore', 'raw', 'tools',
   'build-firefox.js', 'build-chrome.js',
-  'manifest-mv2.json', 'background-mv2.js'
+  'manifest-mv2.json', 'background-mv2.js',
+  'data/journals.json'
 ]) {
   fs.rmSync(path.join(STAGE, skip), { recursive: true, force: true });
 }
