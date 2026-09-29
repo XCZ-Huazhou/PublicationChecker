@@ -9,7 +9,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-BASE = Path(r"D:\Softwares\DataAnalysis\ChromePlugin\PublicationChecker")
+# repo root = tools/ 的上一级；以脚本自身位置定位，clone 后无需改路径
+BASE = Path(__file__).resolve().parent.parent
 RAW = BASE / "raw"
 OUT_DIR = BASE / "data"
 OUT_JSON = OUT_DIR / "journals.json"
