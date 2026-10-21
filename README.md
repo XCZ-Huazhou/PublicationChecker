@@ -36,7 +36,7 @@
 | 浮层顶部输入框 | 刊名可编辑，**边输入边实时匹配**；回车 / 点「查询」立即重查 |
 | 右键 →「查询期刊分区（手动输入刊名）」 | 无需选中，弹出空浮层直接输入刊名 |
 | 工具栏图标 | 手动输入期刊名 / ISSN，展示完整分区详情 |
-| 工具栏图标 →「关于 PublicationChecker」 | 查看版本与数据库信息，更新期刊库（本地文件 / GitHub Release） |
+| 工具栏图标 →「关于 PublicationChecker」 | 查看版本与数据库信息，更新期刊库（本地文件 / GitHub Release；**只对扩展自身的页面生效**，见「更新期刊库」） |
 
 结果卡片包含：
 
@@ -58,23 +58,32 @@
 
 | 文件 | 适用环境 |
 |------|----------|
-| `PublicationChecker-chrome-*.zip` | Chrome / Edge 等现代 Chromium（解压后开发者模式加载） |
-| `PublicationChecker-firefox-*.xpi` | Firefox 115+ / Zen / 其他支持 MV2 的浏览器（拖入安装） |
+| `PublicationChecker-chrome.zip` | Chrome / Edge 等现代 Chromium（解压后开发者模式加载） |
+| `PublicationChecker-firefox.xpi` | Firefox 115+ / Zen / 其他支持 MV2 的浏览器（拖入安装） |
 
-### 方式二：从源码加载
+> 资产名**固定、不带版本号**（发版时覆盖上传同一个名字即可），插件也是按这两个名字去取新数据的，见「更新期刊库 → 维护者」。
 
-1. 下载本仓库（ZIP 需先解压；或直接使用本地目录）
+### 方式二：从源码加载（本地开发，或自己改过代码）
+
+**不要直接把仓库根目录加载成扩展**：`raw/`（14 MB）、`.git/`（10 MB）和未压缩的 `data/journals.json`（7 MB）都会被算进扩展体积，`chrome://extensions` 里会显示 30 MB 以上。先构建出只含运行时文件的目录，再加载它：
+
+1. `node build-chrome.js` —— 产出两样：`../PublicationChecker-chrome.zip`（发布用，约 1.5 MB）和 `../PublicationChecker-chrome/`（加载用，约 1.5 MB）
 2. Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`）
 3. 打开「开发者模式」
-4. 「加载已解压的扩展程序」→ 选择解压后的仓库根目录
+4. 「加载已解压的扩展程序」→ 选择上一步的 `PublicationChecker-chrome` 目录
+5. 以后改完代码：再跑一次 `node build-chrome.js`，回扩展页点「刷新」
+
+> Firefox / Zen 侧对应 `node build-firefox.js`：产出 `PublicationChecker-firefox.xpi`（约 1.5 MB）；Zen profile 里已装过的话，脚本会直接覆盖部署，重启浏览器生效。
 
 ### 360 极速 / 旧版 Chromium（Manifest V2）
 
 若提示 **「requires version 109 or greater」** 或无法加载清单：
 
-1. 备份根目录的 `manifest.json`（可改名为 `manifest-mv3.json`）
-2. 把 `manifest-mv2.json` **复制或重命名**为 `manifest.json`
+1. 备份 `manifest.json`（可改名为 `manifest-mv3.json`）
+2. 把仓库里的 `manifest-mv2.json` **复制或重命名**为 `manifest.json`
 3. 再在扩展管理页加载 / 重新加载
+
+> 打包产物（zip 与 `PublicationChecker-chrome/`）只含 MV3 清单，**不含** `manifest-mv2.json` 与 `background-mv2.js` —— 这两个文件只在仓库里。走 MV2 的话，把这两个文件复制进产物目录再改名，或直接加载仓库源码目录（体积大，见「方式二」的说明）。
 
 部分浏览器需在设置中允许「未知来源扩展」或切换到极速内核。
 
@@ -93,20 +102,53 @@
 
 - 扩展运行体积约 **1.5 MB**
 - 数据：`data/journals.json.gz`（紧凑数组 + gzip）
-- 检索：前缀索引 + 兜底扫描，首次解压后缓存
+- 检索：前缀索引 + 运行时词索引（`buildTokenIndex`，支持中间词）+ 兜底扫描，首次解压后缓存
 
 ## 更新期刊库
 
-**默认就用扩展内置的库，不需要任何操作。** 想换成自己的数据，看下面的「换成自己的数据库」。
+**默认就用扩展内置的库，不需要任何操作。** 插件运行时只读一份数据：`data/journals.json.gz`（gzip 压缩的 JSON，约 1.5 MB、23059 刊）。要换掉它，先看「改哪里」，再按改动范围选一条路线。
+
+### 改哪里
+
+| 想改的东西 | 位置 | 怎么改 |
+|------|------|------|
+| 库里的数据（刊名、分区、影响因子…） | `data/journals.json.gz` | 插件运行时只读这一份，换掉它就换了数据 |
+| 数据来源、字段取舍、收录范围 | `raw/*.csv` + `tools/build_db.py` | 脚本按**列名**读取，删行、删列、去掉整个来源都可以；改完重建出上面那份 `.json.gz` |
+| 检索与排序（怎么搜、同分怎么排） | `lib/search-core.js`：`normName` / `scoreName` / `candidateIds` / `searchJournals` | 前缀索引 + 运行时词索引（`buildTokenIndex`），与数据本身无关 |
+| 数据格式 | 见下方「数据格式」 | `rows` 每行 20 个位置，缺的字段填 `""` |
+| 打包与下载约定 | `options.js` 顶部的 `GITHUB_REPO` / `DATA_PATH` / `ASSET_RULES`，以及 `build-chrome.js` / `build-firefox.js` | 资产名固定，见下方「维护者」 |
+
+### 路线一：改源码 + 重新打包（唯一能让**所有**入口都换库的方式）
+
+1. 改 `raw/` 下的 CSV，或改 `tools/build_db.py`（例如去掉中科院分区：把 `load_cas(...)` 那行注释掉）
+2. `python tools/build_db.py` —— 重建出 `data/journals.json.gz`，输出统计里对应来源变成 0 即生效
+3. `node build-chrome.js` / `node build-firefox.js` —— 打出 Chrome zip / Firefox xpi
+4. 重新加载扩展（`chrome://extensions` 里点刷新；Firefox 重装 xpi）
+
+从 CSV 到安装包的完整流程图、环境要求，以及「删数据源 / 删列删行」的完整示例，见下方「数据与自定义」。
+
+### 路线二：选项页导入（不碰代码、不用重装，但只对扩展自身的页面生效）
 
 入口：工具栏图标 →「关于 PublicationChecker」（或扩展详情页的「扩展程序选项」）。
 
 | 来源 | 说明 |
 |------|------|
-| 从本地更新 | **Chrome / Edge**：选解压后的扩展文件夹，自动读其中的 `data/journals.json.gz`；**Firefox**：选 `.xpi` 包，从中解出同一路径，也可直接选 `.json.gz` / `.json` |
-| 从 GitHub 更新 | 自动识别浏览器，从发布仓库的最新 Release 里挑对应的包：**Firefox / Zen 取 `.xpi`**，**Chrome / Edge 取 `.zip`**，再从中解出 `data/journals.json.gz`。更新前会显示检测到的版本号（如 `v0.1.3`）和当前扩展版本，确认后才下载替换 |
+| 从本地更新 | **Chrome / Edge**：选解压后的扩展文件夹，自动读其中的 `data/journals.json.gz`（把 `journals.json.gz` / `journals.json` 直接放在所选文件夹根目录也认）；**Firefox**：选 `.xpi` 包，从中解出同一路径，也可直接选 `.json.gz` / `.json` |
+| 从 GitHub 更新 | 自动识别浏览器，从发布仓库的最新 Release 里取对应的包：**Firefox / Zen 取 `.xpi`**，**Chrome / Edge 取 `.zip`**，再从中解出 `data/journals.json.gz`。更新前会显示检测到的版本号（如 `v0.1.3`）和当前扩展版本，确认后才下载替换 |
 
-> **维护者**：把发布仓库写进 `options.js` 顶部的 `GITHUB_REPO = "owner/repo"`，选项页就会隐藏「仓库」输入框，用户点一下「检查更新」即可。
+导入前会校验：必须是含 `rows` 数组的合法数据，且条数 ≥ 1000（`lib/search-core.js` 的 `validatePayload`，`MIN_ROWS = 1000`），校验不过直接拒绝，不会把库写坏。
+
+> **生效范围（重要）**：导入的库存进 IndexedDB（库名 `publication-checker`、store `db`、键 `override`，见 `lib/search-core.js` 的 `importDatabase` / `loadOverride`），**只有扩展自己的页面读得到** —— 工具栏弹窗、完整结果页、选项页、后台。
+>
+> **网页里右键弹出的浮层读不到它**，仍然用内置库：content script 调 IndexedDB 用的是宿主网页的源，不是扩展的源（Chrome 官方文档 *Storage and cookies*：content scripts 里调 Web Storage 类 API，访问的是宿主页的数据，而不是扩展的）；而且 `content.js` 在页面空闲时就已经把内置库解压并缓存了，没人通知它换库。
+>
+> 所以导入之后，**在网页里右键查询看到的还是旧数据**，刷新页面也没用（源不同这一点不会变）。要让网页浮层也换库，只能走路线一。
+>
+> 回到内置库：清掉那条 `override`（`lib/search-core.js` 的 `clearOverride()`），或卸载扩展重装 —— 扩展源的 IndexedDB 会一并清掉。
+
+### 维护者：发版时让「从 GitHub 更新」拿得到新库
+
+> 把发布仓库写进 `options.js` 顶部的 `GITHUB_REPO = "owner/repo"`，选项页就会隐藏「仓库」输入框，用户点一下「检查更新」即可。
 >
 > 发布时把 `node build-chrome.js` / `node build-firefox.js` 产出的包作为 Release 资产上传，**名字固定**：
 >
@@ -117,23 +159,13 @@
 >
 > 下载地址是 `releases/latest/download/<这个名字>` —— `latest` 由 GitHub 解析成最新 Release，所以**每次发版覆盖上传同一个名字**即可，不用带版本号。插件直接从包里取 `data/journals.json.gz`，**不需要额外单独上传数据文件**。
 >
-> 如果用了别的资产名，插件会退回 GitHub API 去问真实文件名 —— 功能照用，但会消耗一次 API 配额（未认证 60 次/小时/IP）。
+> 如果用了别的资产名，插件会退回 GitHub API 去问真实文件名 —— 功能照用，但会消耗一次 API 配额（未认证 60 次/小时/IP）；发布页读不出 tag 时（代理、网络问题）也会走一次 API。
 >
-> 为什么不走 GitHub API：未认证的 REST API 限额是 **60 次/小时/IP**，若大量用户共用出口 IP（公司/学校 NAT、代理、VPN），配额会被瞬间用光，插件就会收到 403。所以插件默认读发布页的重定向拿版本号、再按上面的命名约定直接下载 —— 这条路没有次数限制；只有命名不符合约定时，才回退到 API 查询真实文件名。
+> 为什么不走 GitHub API：未认证的 REST API 限额是 **60 次/小时/IP**，若大量用户共用出口 IP（公司/学校 NAT、代理、VPN），配额会被瞬间用光，插件就会收到 403。所以插件默认读发布页的重定向拿版本号、再按上面的命名约定直接下载 —— 这条路没有次数限制；只有命名不符合约定、或发布页读不到时，才回退到 API。
 
-导入前会校验（必须是含 `rows` 数组的合法数据，且条数 ≥ 1000），校验不过直接拒绝，不会把库写坏。导入的数据存在 IndexedDB，**检索时优先于内置库，且无需重载扩展即可生效**。
+### 数据格式
 
-### 换成自己的数据库
-
-**路线一：改源码重新打包**（可版本化，适合长期维护）
-
-改 `raw/` 下的 CSV，或直接改 `tools/build_db.py`，然后重建 + 重新打包 —— 见下方「数据与自定义」的完整流程。
-
-**路线二：直接替换运行时数据库**（不碰代码、不用重装）
-
-生成一份 `journals.json.gz`，用上面的「从本地更新」或「从 GitHub 更新」导入即可。
-
-数据格式（`data/journals.json.gz` 解压后的 JSON）：
+两条路线用的是同一份格式。`data/journals.json.gz` 解压后的 JSON：
 
 ```json
 {
@@ -159,9 +191,7 @@
 | 8 | 中科院大类 | 18 | 是否综述（填 `是` 才显示） |
 | 9 | 中科院 Top（填 `是` 才显示标签） | 19 | 语种 |
 
-`prefix` 是「刊名规范化后前两个字符 → 行号列表」的前缀索引，**删掉也能用**，只是检索会退化成全表扫描。改完压缩成 gzip、放回 `data/journals.json.gz` 就是一份可直接导入的库。
-
-想回到内置版本：卸载扩展后重新加载（IndexedDB 会一并清掉），或按「路线一」重新导入一份内置格式的数据。
+`prefix` 是「刊名规范化后前两个字符 → 行号列表」的前缀索引，**删掉也能用**，只是检索会退化成全表扫描。改完压缩成 gzip、放回 `data/journals.json.gz`，就是一份可以直接打包（路线一）或直接导入（路线二）的库。
 
 ## 数据与自定义
 
