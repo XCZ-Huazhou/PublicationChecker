@@ -9,8 +9,32 @@ const { execFileSync } = require('child_process');
 
 const SRC = __dirname;
 const STAGE = path.join(SRC, '..', '.ff-build-pubcheck');
-const ZIP = 'D:\\Softwares\\DataAnalysis\\R\\Rtools\\rtools45\\usr\\bin\\zip.exe';
-const ZEN_EXT = 'D:\\Softwares\\DailyWork\\ZenBrowser\\Profile\\extensions';
+// zip 可执行文件：优先用 PATH 里的 zip，找不到再退回本机 Rtools 自带的那份。
+// 换机器时直接把 zip 加进 PATH 即可，也可以改下面这个候选列表。
+const ZIP_CANDIDATES = [
+  'zip',
+  'D:\\Softwares\\DataAnalysis\\R\\Rtools\\rtools45\\usr\\bin\\zip.exe',
+];
+
+function resolveZip() {
+  for (const c of ZIP_CANDIDATES) {
+    try {
+      execFileSync(c, ['-v'], { stdio: 'ignore' });
+      return c;
+    } catch (e) {
+      // 这个候选不可用，试下一个
+    }
+  }
+  console.error(
+    '找不到 zip 命令。装一个 zip 并加进 PATH，或把它的完整路径写进 ZIP_CANDIDATES。'
+  );
+  process.exit(1);
+}
+
+const ZIP = resolveZip();
+// Zen 的 profile 扩展目录：换 profile 就改这里，或设环境变量 PC_ZEN_EXT
+const ZEN_EXT =
+  process.env.PC_ZEN_EXT || 'D:\\Softwares\\DailyWork\\ZenBrowser\\Profile\\extensions';
 const GECKO_ID = 'publication-checker@cstai.local';
 const XPI_OUT = path.join(SRC, '..', 'PublicationChecker-firefox.xpi');
 

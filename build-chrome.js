@@ -12,7 +12,29 @@ const { execFileSync } = require('child_process');
 
 const SRC = __dirname;
 const STAGE = path.join(SRC, '..', '.chrome-build-pubcheck');
-const ZIP = 'D:\\Softwares\\DataAnalysis\\R\\Rtools\\rtools45\\usr\\bin\\zip.exe';
+// zip 可执行文件：优先用 PATH 里的 zip，找不到再退回本机 Rtools 自带的那份。
+// 换机器时直接把 zip 加进 PATH 即可，也可以改下面这个候选列表。
+const ZIP_CANDIDATES = [
+  'zip',
+  'D:\\Softwares\\DataAnalysis\\R\\Rtools\\rtools45\\usr\\bin\\zip.exe',
+];
+
+function resolveZip() {
+  for (const c of ZIP_CANDIDATES) {
+    try {
+      execFileSync(c, ['-v'], { stdio: 'ignore' });
+      return c;
+    } catch (e) {
+      // 这个候选不可用，试下一个
+    }
+  }
+  console.error(
+    '找不到 zip 命令。装一个 zip 并加进 PATH，或把它的完整路径写进 ZIP_CANDIDATES。'
+  );
+  process.exit(1);
+}
+
+const ZIP = resolveZip();
 const ZIP_OUT = path.join(SRC, '..', 'PublicationChecker-chrome.zip');
 // Chrome 不能直接装 zip（不像 Firefox 能拖 xpi），只能加载已解压的扩展程序，
 // 所以这里同步一份出来 —— 与 build-firefox.js 自动部署到 Zen profile 是对称的。
@@ -39,14 +61,6 @@ function dirBytes(dir) {
 
 function fmtSize(n) {
   return (n / 1024 / 1024).toFixed(2) + ' MB';
-}
-
-if (!fs.existsSync(ZIP)) {
-  console.error(
-    '找不到 zip 命令：' + ZIP + '\n' +
-      '请把它改成你机器上 zip.exe 的路径，或装一个 zip 并加进 PATH 后改成 "zip"。'
-  );
-  process.exit(1);
 }
 
 // 1. staging：运行时文件进包，源数据(raw/tools)、仓库元数据与构建物料不进
