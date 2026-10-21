@@ -1,13 +1,17 @@
 /**
  * PublicationChecker 选项页：期刊数据库更新
  *
- * 两条取数路径（按浏览器能力分流）：
- *   - Chromium：showDirectoryPicker 选解压后的扩展文件夹，读 data/journals.json.gz
- *   - Firefox ：<input type="file"> 选 .xpi（zip），自己解出 data/journals.json.gz
- * 另外支持从 GitHub Release 拉取 journals.json.gz。
+ * 运行时库由三部分组成（见 tools/build_db.py）：
+ *   索引 data/journals.idx.json.gz、数据块 data/chunks/NNN.json.gz、ISSN 表 data/journals.issn.json.gz
  *
- * 校验通过的数据写进 IndexedDB（见 lib/search-core.js 的 importDatabase），
- * 检索时覆盖库优先于扩展内置库，且无需重载扩展即可生效。
+ * 两条取数路径（按浏览器能力分流）：
+ *   - Chromium：showDirectoryPicker 选解压后的扩展文件夹，整包读出来
+ *   - Firefox ：<input type="file"> 选 .xpi（zip），自己从包里解出来
+ * 另外支持从 GitHub Release 拉取同样的包。
+ *
+ * 校验通过后写进 IndexedDB（见 lib/search-core.js 的 importDatabase），
+ * 覆盖库与内置库形态一致，扩展自身的页面检索时优先用它
+ * （网页里右键弹出的浮层仍用内置库，原因见 README「更新期刊库」）。
  */
 "use strict";
 
@@ -15,7 +19,11 @@ const $ = (id) => document.getElementById(id);
 const PC = window.PublicationChecker;
 
 const REPO_KEY = "pcGithubRepo";
-const DATA_PATH = "data/journals.json.gz";
+// 运行时库是「索引 + 数据块 + ISSN」三部分（build_db.py 产出）：
+// 索引在小文件里，完整行按 data/chunks/NNN.json.gz 分块，导入时整包搬运。
+const IDX_PATH = "data/journals.idx.json.gz";
+const ISSN_PATH = "data/journals.issn.json.gz";
+const CHUNK_RE = /^data\/chunks\/\d+\.json\.gz$/;
 const HAS_DIR_PICKER = typeof window.showDirectoryPicker === "function";
 
 // 内置的发布仓库：填成 "owner/repo" 后，选项页不再要求用户手填
@@ -252,8 +260,8 @@ function notifyReload() {
   }
 }
 
-async function applyBytes(bytes, source) {
-  const out = await PC.importDatabase(bytes, source);
+async function applyInput(input, source) {
+  const out = await PC.importDatabase(input, source);
   notifyReload();
   await refreshInfo();
   return out;
@@ -261,30 +269,70 @@ async function applyBytes(bytes, source) {
 
 // ---------- 本地：Chromium 选文件夹 ----------
 
-async function pickFromDirectory() {
-  const dir = await window.showDirectoryPicker({ mode: "read" });
-
-  let handle = null;
+/** 从「解压后的扩展文件夹」读整套运行时库（索引 + 数据块 + ISSN） */
+async function readBundleFromDirectory(dir) {
+  let dataDir = dir;
   try {
-    const dataDir = await dir.getDirectoryHandle("data");
-    handle = await dataDir.getFileHandle("journals.json.gz");
+    dataDir = await dir.getDirectoryHandle("data");
   } catch (e) {
-    handle = null;
+    // 用户直接把 data/ 这一层选进来了
   }
-  if (!handle) {
-    for (const name of ["journals.json.gz", "journals.json"]) {
-      try {
-        handle = await dir.getFileHandle(name);
-        break;
-      } catch (e) {
-        handle = null;
-      }
-    }
-  }
-  if (!handle) throw new Error("该文件夹里没有 data/journals.json.gz");
 
-  const file = await handle.getFile();
-  return { bytes: await file.arrayBuffer(), label: file.name };
+  let idxFile = null;
+  try {
+    idxFile = await (await dataDir.getFileHandle("journals.idx.json.gz")).getFile();
+  } catch (e) {
+    idxFile = null;
+  }
+  if (!idxFile) throw new Error("该文件夹里没有 " + IDX_PATH);
+
+  let issnBytes = null;
+  try {
+    issnBytes = await (
+      await (await dataDir.getFileHandle("journals.issn.json.gz")).getFile()
+    ).arrayBuffer();
+  } catch (e) {
+    issnBytes = null; // 没有 ISSN 表也能用，只是 ISSN 查询退化
+  }
+
+  const chunksDir = await dataDir.getDirectoryHandle("chunks");
+  const names = [];
+  for await (const entry of chunksDir.values()) {
+    if (entry.kind === "file" && /\.json\.gz$/i.test(entry.name)) names.push(entry.name);
+  }
+  names.sort();
+  if (!names.length) throw new Error("这个文件夹里没有 data/chunks/*.json.gz");
+
+  const chunks = [];
+  for (const name of names) {
+    const f = await (await chunksDir.getFileHandle(name)).getFile();
+    chunks.push(await f.arrayBuffer());
+  }
+
+  return { idxBytes: await idxFile.arrayBuffer(), chunks: chunks, issnBytes: issnBytes };
+}
+
+/** 从 zip / xpi 包里读整套运行时库（Firefox 本地选择与 GitHub 更新都走这里） */
+async function readBundleFromZip(buf) {
+  const names = PCZipRead.listEntries(buf);
+  if (names.indexOf(IDX_PATH) < 0) {
+    throw new Error("这个包里没有 " + IDX_PATH + "（多半是旧版包，装上新版扩展再试）");
+  }
+  const idxBytes = await PCZipRead.readEntry(buf, IDX_PATH);
+
+  const chunkNames = names.filter(function (n) {
+    return CHUNK_RE.test(n);
+  });
+  chunkNames.sort();
+  if (!chunkNames.length) throw new Error("这个包里没有 data/chunks/*.json.gz");
+
+  const chunks = [];
+  for (const n of chunkNames) chunks.push(await PCZipRead.readEntry(buf, n));
+
+  let issnBytes = null;
+  if (names.indexOf(ISSN_PATH) >= 0) issnBytes = await PCZipRead.readEntry(buf, ISSN_PATH);
+
+  return { idxBytes: idxBytes, chunks: chunks, issnBytes: issnBytes };
 }
 
 // ---------- 本地：Firefox 选 xpi ----------
@@ -313,28 +361,32 @@ async function onLocal() {
   clearStatus();
   busy(true);
   try {
-    let bytes;
+    let input;
     let label;
 
     if (HAS_DIR_PICKER) {
-      const picked = await pickFromDirectory();
-      bytes = picked.bytes;
-      label = "文件夹中的 " + picked.label;
-      setStatus("正在校验并写入…");
+      const dir = await window.showDirectoryPicker({ mode: "read" });
+      label = "所选文件夹";
+      setStatus("正在读取文件夹里的索引与数据块…");
+      input = await readBundleFromDirectory(dir);
+      label += "（" + input.chunks.length + " 个数据块）";
     } else {
       const file = await pickFromFileInput();
       label = file.name;
       setStatus("正在读取 " + file.name + "（" + fmtSize(file.size) + "）…");
-      bytes = await file.arrayBuffer();
+      const buf = await file.arrayBuffer();
       const lower = file.name.toLowerCase();
       if (lower.endsWith(".xpi") || lower.endsWith(".zip")) {
-        setStatus("正在从 " + file.name + " 里解出 " + DATA_PATH + " …");
-        bytes = await PCZipRead.readEntry(bytes, DATA_PATH);
+        setStatus("正在从 " + file.name + " 里解出索引与数据块…");
+        input = await readBundleFromZip(buf);
+      } else {
+        // 兼容：直接给一份旧格式（含 rows）的完整数据文件
+        input = buf;
       }
     }
 
     setStatus("正在校验并写入…");
-    const out = await applyBytes(bytes, "local");
+    const out = await applyInput(input, "local");
     setStatus(
       "更新成功：" +
         label +
@@ -595,8 +647,8 @@ async function onGithub() {
       }
     }
 
-    setStatus("已下载 " + fmtSize(buf.byteLength) + "，正在解出 " + DATA_PATH + " …");
-    const bytes = await PCZipRead.readEntry(buf, DATA_PATH);
+    setStatus("已下载 " + fmtSize(buf.byteLength) + "，正在解出索引与数据块…");
+    const bundle = await readBundleFromZip(buf);
 
     // 走「直接下载」那条路时没有 tag，就从包内的 manifest.json 读真实版本号
     if (!tag) {
@@ -609,8 +661,8 @@ async function onGithub() {
       }
     }
 
-    setStatus("已解出 " + fmtSize(bytes.byteLength) + "，正在校验并写入…");
-    const out = await applyBytes(bytes, "github");
+    setStatus("已解出索引与 " + bundle.chunks.length + " 个数据块，正在校验并写入…");
+    const out = await applyInput(bundle, "github");
     await storageSet(REPO_KEY, repo);
     setStatus(
       "已更新到 " +
@@ -686,15 +738,17 @@ function setupLocalUi() {
   if (HAS_DIR_PICKER) {
     $("local-btn").textContent = "选择扩展文件夹…";
     $("local-hint").textContent =
-      "选中扩展文件夹，扩展会读取其中的 data/journals.json.gz，用它替换当前的期刊库。";
+      "选中扩展文件夹，扩展会读取其中的 " +
+      IDX_PATH +
+      " 与 data/chunks/*.json.gz，用它替换当前的期刊库。";
     const input = $("local-file");
     if (input) input.remove();
   } else {
-    $("local-btn").textContent = "选择 xpi / 数据文件…";
+    $("local-btn").textContent = "选择 xpi / zip / 数据文件…";
     $("local-hint").textContent =
-      "选中 Firefox 的 .xpi 包，扩展会从中取出 " +
-      DATA_PATH +
-      "；也可直接选 .json.gz / .json 文件。";
+      "选中扩展包（.xpi / .zip），扩展会从中取出 " +
+      IDX_PATH +
+      " 与数据块；也可直接选旧格式的 .json.gz / .json 文件。";
     $("local-file").setAttribute("accept", ".xpi,.zip,.gz,.json");
   }
 }

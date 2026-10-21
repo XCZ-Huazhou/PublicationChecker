@@ -48,7 +48,9 @@
     "open_in_tab": true
   },
   "web_accessible_resources": [
-    "data/journals.json.gz",
+    "data/journals.idx.json.gz",
+    "data/journals.issn.json.gz",
+    "data/chunks/*",
     "results.html",
     "lib/search-core.js"
   ]

@@ -6,6 +6,7 @@ import csv
 import gzip
 import json
 import re
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,8 +14,13 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent
 RAW = BASE / "raw"
 OUT_DIR = BASE / "data"
-OUT_JSON = OUT_DIR / "journals.json"
-OUT_GZ = OUT_DIR / "journals.json.gz"
+# v3 运行时格式：索引单独一个文件，完整行分块存放。
+# 插件只加载索引就能完成匹配，命中后再取「所在的那一块」，
+# 所以第一次查询不必解压 + 解析整个库。
+OUT_IDX = OUT_DIR / "journals.idx.json.gz"
+OUT_ISSN = OUT_DIR / "journals.issn.json.gz"
+CHUNK_DIR = OUT_DIR / "chunks"
+CHUNK = 500  # 每块行数
 
 
 def norm_issn(v: str | None) -> str:
@@ -265,33 +271,78 @@ def main() -> None:
         if new_ids:
             prefix2[k] = new_ids
 
-    payload = {
-        "v": 2,
-        "meta": {
-            "builtAt": datetime.now(timezone.utc).isoformat(),
-            "jcr": "2025",
-            "cas": "2025升级版",
-            "xinrui": "2026",
-            "source": "hitfyd/ShowJCR",
-            "count": len(rows2),
-        },
-        "rows": rows2,
-        "prefix": prefix2,
+    meta = {
+        "builtAt": datetime.now(timezone.utc).isoformat(),
+        "jcr": "2025",
+        "cas": "2025升级版",
+        "xinrui": "2026",
+        "source": "hitfyd/ShowJCR",
+        "count": len(rows2),
     }
 
+    # 索引里只放「匹配」需要的东西：刊名、中文名、词索引、前缀桶。
+    # 规范化刊名不存 —— 运行时按需算（逐字符版全表约 17ms，比正则版快 4 倍），
+    # 省下的 60 万字符约占索引体积的四分之一。
+    names = [r[0] for r in rows2]
+    cns = {str(i): r[15] for i, r in enumerate(rows2) if r[15]}
+    issns = [[r[1], r[2]] for r in rows2]
+    tokens: dict[str, list[int]] = {}
+    for i, r in enumerate(rows2):
+        seen: set[str] = set()
+        for t in norm_name(r[0]).split():
+            if len(t) < 2 or t in seen:
+                continue
+            seen.add(t)
+            tokens.setdefault(t, []).append(i)
+
+    def write_gz(path: Path, obj) -> int:
+        raw = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        with gzip.open(path, "wb", compresslevel=9) as gz:
+            gz.write(raw)
+        return len(raw)
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
-        "utf-8"
+    if CHUNK_DIR.exists():
+        shutil.rmtree(CHUNK_DIR)  # 整目录重建，避免上次构建多出来的块留在包里
+    CHUNK_DIR.mkdir()
+
+    idx_chars = write_gz(
+        OUT_IDX,
+        {
+            "v": 3,
+            "meta": meta,
+            "chunkSize": CHUNK,
+            "names": names,
+            "cns": cns,
+            "tokens": tokens,
+            "prefix": prefix2,
+        },
     )
-    OUT_JSON.write_bytes(raw)
-    with gzip.open(OUT_GZ, "wb", compresslevel=9) as gz:
-        gz.write(raw)
+    issn_chars = write_gz(OUT_ISSN, issns)
+
+    chunk_chars = 0
+    for start in range(0, len(rows2), CHUNK):
+        chunk_chars += write_gz(
+            CHUNK_DIR / f"{start // CHUNK:03d}.json.gz", rows2[start : start + CHUNK]
+        )
+
+    # 旧的 v2 单文件不再产出：运行时只用索引 + 数据块，留着只是让包多 1.5 MB
+    for stale in (OUT_DIR / "journals.json.gz", OUT_DIR / "journals.json"):
+        if stale.exists():
+            stale.unlink()
 
     n_jcr = sum(1 for r in rows2 if r[4])
     n_cas = sum(1 for r in rows2 if r[7])
     n_xr = sum(1 for r in rows2 if r[11])
     print(f"journals={len(rows2)} jcr={n_jcr} cas={n_cas} xinrui={n_xr}")
-    print(f"json={OUT_JSON.stat().st_size} gz={OUT_GZ.stat().st_size}")
+    print(
+        f"idx chars={idx_chars} gz={OUT_IDX.stat().st_size}  "
+        f"issn chars={issn_chars} gz={OUT_ISSN.stat().st_size}"
+    )
+    print(
+        f"chunks={len(rows2) // CHUNK + (1 if len(rows2) % CHUNK else 0)} "
+        f"chars={chunk_chars} gz={sum(p.stat().st_size for p in CHUNK_DIR.glob('*.json.gz'))}"
+    )
 
     # sample
     for probe in ["Nature Communications", "Remote Sensing of Environment"]:

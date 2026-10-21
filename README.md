@@ -6,7 +6,7 @@
 - **中科院分区**（2025 升级版，大类 / 小类 / Top）
 - **新锐分区**（2026）
 
-内置约 2.3 万刊离线库（约 1.5 MB，gzip），**无需联网、无需登录**。
+内置约 2.3 万刊离线库（索引 + 数据块共约 2.3 MB，gzip），**无需联网、无需登录**。
 
 ## 解决什么问题
 
@@ -65,15 +65,15 @@
 
 ### 方式二：从源码加载（本地开发，或自己改过代码）
 
-**不要直接把仓库根目录加载成扩展**：`raw/`（14 MB）、`.git/`（10 MB）和未压缩的 `data/journals.json`（7 MB）都会被算进扩展体积，`chrome://extensions` 里会显示 30 MB 以上。先构建出只含运行时文件的目录，再加载它：
+**不要直接把仓库根目录加载成扩展**：`raw/`（14 MB）、`.git/`（10 MB）都会被算进扩展体积，`chrome://extensions` 里会显示 30 MB 以上。先构建出只含运行时文件的目录，再加载它：
 
-1. `node build-chrome.js` —— 产出两样：`../PublicationChecker-chrome.zip`（发布用，约 1.5 MB）和 `../PublicationChecker-chrome/`（加载用，约 1.5 MB）
+1. `node build-chrome.js` —— 产出两样：`../PublicationChecker-chrome.zip`（发布用，约 2.4 MB）和 `../PublicationChecker-chrome/`（加载用，约 2.4 MB）
 2. Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`）
 3. 打开「开发者模式」
 4. 「加载已解压的扩展程序」→ 选择上一步的 `PublicationChecker-chrome` 目录
 5. 以后改完代码：再跑一次 `node build-chrome.js`，回扩展页点「刷新」
 
-> Firefox / Zen 侧对应 `node build-firefox.js`：产出 `PublicationChecker-firefox.xpi`（约 1.5 MB）；Zen profile 里已装过的话，脚本会直接覆盖部署，重启浏览器生效。
+> Firefox / Zen 侧对应 `node build-firefox.js`：产出 `PublicationChecker-firefox.xpi`（约 2.4 MB）；Zen profile 里已装过的话，脚本会直接覆盖部署，重启浏览器生效。
 
 ### 360 极速 / 旧版 Chromium（Manifest V2）
 
@@ -100,19 +100,20 @@
 
 ## 体积与性能
 
-- 扩展运行体积约 **1.5 MB**
-- 数据：`data/journals.json.gz`（紧凑数组 + gzip）
-- 检索：前缀索引 + 运行时词索引（`buildTokenIndex`，支持中间词）+ 兜底扫描，首次解压后缓存
+- 扩展运行体积约 **2.4 MB**，其中数据约 2.3 MB
+- 检索：**匹配只用索引**（`data/journals.idx.json.gz`，约 0.55 MB），命中之后才去取那几行所在的块（`data/chunks/*.json.gz`）
+  —— 所以第一次查询不必解压 + 解析整个库
+- `raw/`（原始 CSV）与 `.git/` 都不进安装包
 
 ## 更新期刊库
 
-**默认就用扩展内置的库，不需要任何操作。** 插件运行时只读一份数据：`data/journals.json.gz`（gzip 压缩的 JSON，约 1.5 MB、23059 刊）。要换掉它，先看「改哪里」，再按改动范围选一条路线。
+**默认就用扩展内置的库，不需要任何操作。** 运行时库是三个文件（都由 `tools/build_db.py` 产出）：`data/journals.idx.json.gz`（索引）、`data/chunks/*.json.gz`（完整行，每块 500 行）、`data/journals.issn.json.gz`（ISSN）。要换掉它，先看「改哪里」，再按改动范围选一条路线。
 
 ### 改哪里
 
 | 想改的东西 | 位置 | 怎么改 |
 |------|------|------|
-| 库里的数据（刊名、分区、影响因子…） | `data/journals.json.gz` | 插件运行时只读这一份，换掉它就换了数据 |
+| 库里的数据（刊名、分区、影响因子…） | `data/journals.idx.json.gz` + `data/chunks/*.json.gz` | 匹配只读索引，展示才取块；换掉它们就换了数据 |
 | 数据来源、字段取舍、收录范围 | `raw/*.csv` + `tools/build_db.py` | 脚本按**列名**读取，删行、删列、去掉整个来源都可以；改完重建出上面那份 `.json.gz` |
 | 检索与排序（怎么搜、同分怎么排） | `lib/search-core.js`：`normName` / `scoreName` / `candidateIds` / `searchJournals` | 前缀索引 + 运行时词索引（`buildTokenIndex`），与数据本身无关 |
 | 数据格式 | 见下方「数据格式」 | `rows` 每行 20 个位置，缺的字段填 `""` |
@@ -121,7 +122,7 @@
 ### 路线一：改源码 + 重新打包（唯一能让**所有**入口都换库的方式）
 
 1. 改 `raw/` 下的 CSV，或改 `tools/build_db.py`（例如去掉中科院分区：把 `load_cas(...)` 那行注释掉）
-2. `python tools/build_db.py` —— 重建出 `data/journals.json.gz`，输出统计里对应来源变成 0 即生效
+2. `python tools/build_db.py` —— 重建出索引与数据块，输出统计里对应来源变成 0 即生效
 3. `node build-chrome.js` / `node build-firefox.js` —— 打出 Chrome zip / Firefox xpi
 4. 重新加载扩展（`chrome://extensions` 里点刷新；Firefox 重装 xpi）
 
@@ -133,8 +134,8 @@
 
 | 来源 | 说明 |
 |------|------|
-| 从本地更新 | **Chrome / Edge**：选解压后的扩展文件夹，自动读其中的 `data/journals.json.gz`（把 `journals.json.gz` / `journals.json` 直接放在所选文件夹根目录也认）；**Firefox**：选 `.xpi` 包，从中解出同一路径，也可直接选 `.json.gz` / `.json` |
-| 从 GitHub 更新 | 自动识别浏览器，从发布仓库的最新 Release 里取对应的包：**Firefox / Zen 取 `.xpi`**，**Chrome / Edge 取 `.zip`**，再从中解出 `data/journals.json.gz`。更新前会显示检测到的版本号（如 `v0.1.3`）和当前扩展版本，确认后才下载替换 |
+| 从本地更新 | **Chrome / Edge**：选解压后的扩展文件夹，整包读其中的 `data/journals.idx.json.gz`、`data/chunks/*.json.gz` 与 `data/journals.issn.json.gz`；**Firefox**：选 `.xpi` 包，从包里解出同样这几个文件。也接受旧格式（含 `rows` 的 `.json.gz` / `.json` 单文件） |
+| 从 GitHub 更新 | 自动识别浏览器，从发布仓库的最新 Release 里取对应的包：**Firefox / Zen 取 `.xpi`**，**Chrome / Edge 取 `.zip`**，再从中解出索引与数据块。更新前会显示检测到的版本号（如 `v0.1.3`）和当前扩展版本，确认后才下载替换 |
 
 导入前会校验：必须是含 `rows` 数组的合法数据，且条数 ≥ 1000（`lib/search-core.js` 的 `validatePayload`，`MIN_ROWS = 1000`），校验不过直接拒绝，不会把库写坏。
 
@@ -157,7 +158,7 @@
 > PublicationChecker-firefox.xpi    （Firefox / Zen）
 > ```
 >
-> 下载地址是 `releases/latest/download/<这个名字>` —— `latest` 由 GitHub 解析成最新 Release，所以**每次发版覆盖上传同一个名字**即可，不用带版本号。插件直接从包里取 `data/journals.json.gz`，**不需要额外单独上传数据文件**。
+> 下载地址是 `releases/latest/download/<这个名字>` —— `latest` 由 GitHub 解析成最新 Release，所以**每次发版覆盖上传同一个名字**即可，不用带版本号。插件直接从包里取 `data/journals.idx.json.gz` 与 `data/chunks/*.json.gz`，**不需要额外单独上传数据文件**。
 >
 > 如果用了别的资产名，插件会退回 GitHub API 去问真实文件名 —— 功能照用，但会消耗一次 API 配额（未认证 60 次/小时/IP）；发布页读不出 tag 时（代理、网络问题）也会走一次 API。
 >
@@ -165,16 +166,20 @@
 
 ### 数据格式
 
-两条路线用的是同一份格式。`data/journals.json.gz` 解压后的 JSON：
+`python tools/build_db.py` 产出三个东西，插件按需读取：
 
-```json
-{
-  "v": 2,
-  "meta": { "builtAt": "2026-09-29T02:14:32Z", "jcr": "2025", "cas": "2025升级版", "xinrui": "2026", "count": 1 },
-  "rows": [ [ "刊名", "0210-7287", "", "3.5", "Q1", "SCIE", "学科|Q1|1/100", "1区", "计算机科学", "是", "小类|1区", "1区", "计算机科学", "是", "", "中文名", "", "出版商", "", "English" ] ],
-  "prefix": { "02": [0] }
-}
-```
+| 文件 | 内容 | 什么时候读 |
+|------|------|-----------|
+| `data/journals.idx.json.gz` | `{ v: 3, meta, chunkSize, names, cns, tokens, prefix }` | 每次检索都读（匹配只用它） |
+| `data/chunks/NNN.json.gz` | 一批完整行，每块 `chunkSize` 行 | 命中哪几行，才读这几行所在的块 |
+| `data/journals.issn.json.gz` | `[[ISSN, E-ISSN], …]`，下标即行号 | 只在按 ISSN 查询时读 |
+
+索引里两个决定「命中哪些行」的结构：
+
+- `tokens`：`{ 词: [行号…] }` —— 刊名规范化后按空格切开的倒排表，支撑「中间词也能搜到」
+- `prefix`：`{ 前两个字符: [行号…] }` —— 支撑只输入刊名开头几个字母
+
+规范化刊名（小写、`&`→`and`、其余非字母数字折成空格、压缩空格）不占存储，插件要用时现算。
 
 `rows` 每行的位置（缺的字段一律填 `""`）：
 
@@ -191,7 +196,7 @@
 | 8 | 中科院大类 | 18 | 是否综述（填 `是` 才显示） |
 | 9 | 中科院 Top（填 `是` 才显示标签） | 19 | 语种 |
 
-`prefix` 是「刊名规范化后前两个字符 → 行号列表」的前缀索引，**删掉也能用**，只是检索会退化成全表扫描。改完压缩成 gzip、放回 `data/journals.json.gz`，就是一份可以直接打包（路线一）或直接导入（路线二）的库。
+`prefix` 与 `tokens` 都是「行号列表」的倒排表，**行号即 `chunks` 里的位置**（块号 = 行号 ÷ `chunkSize`）。改完重跑 `python tools/build_db.py`，就会重新生成索引与全部数据块。
 
 ## 数据与自定义
 
@@ -203,7 +208,9 @@
 raw/*.csv（原始分区表，仅仓库内，不进安装包）
         │  python tools/build_db.py
         ▼
-data/journals.json.gz（约 1.5 MB，23059 刊）← 插件运行时只读这一份
+data/journals.idx.json.gz    （索引，约 0.55 MB）  ← 匹配只读它
+data/chunks/*.json.gz        （47 块，共约 1.5 MB）← 命中之后才取那几行所在的块
+data/journals.issn.json.gz   （ISSN，约 0.2 MB）   ← 只在按 ISSN 查询时读
         │  node build-chrome.js / node build-firefox.js
         ▼
 Chrome zip / Firefox xpi 安装包
@@ -250,7 +257,9 @@ PublicationChecker/
   options.*              # 选项页：期刊库更新（本地 / GitHub）
   lib/search-core.js     # 离线检索核心（含覆盖库存储）
   lib/zip-read.js        # 最小 zip 读取器（Firefox 从 xpi 取数用）
-  data/journals.json.gz  # 本地期刊库（编译产物）
+  data/journals.idx.json.gz   # 检索索引（刊名/中文名/词索引/前缀桶，编译产物）
+  data/chunks/                # 完整行，每块 500 行（编译产物）
+  data/journals.issn.json.gz  # ISSN 表（按需加载，编译产物）
   tools/build_db.py      # 数据重建脚本
   build-chrome.js        # 打包 Chrome zip
   build-firefox.js       # 打包 Firefox xpi
