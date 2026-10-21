@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PublicationChecker 数据库更新</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <span class="logo">P</span>
+        <div>
+          <strong>PublicationChecker</strong>
+          <div class="hint">期刊数据库更新</div>
+        </div>
+        <span class="ver" id="ext-version"></span>
+      </header>
+
+      <section class="card">
+        <h2>当前数据库</h2>
+        <div id="db-info" class="info">读取中…</div>
+      </section>
+
+      <section class="card">
+        <h2>从本地更新</h2>
+        <p class="hint" id="local-hint">选择一份新的期刊数据，用它替换当前的期刊库。</p>
+        <button id="local-btn" type="button" class="primary">选择…</button>
+        <input id="local-file" type="file" hidden />
+      </section>
+
+      <section class="card">
+        <h2>从 GitHub 更新</h2>
+        <p class="hint" id="github-hint">
+          自动识别浏览器，从发布仓库拉取对应版本的期刊库，并在更新前告诉你版本号。
+        </p>
+        <label class="field" id="repo-field">
+          <span class="field-label">仓库（owner/repo）</span>
+          <input
+            id="repo"
+            type="text"
+            placeholder="owner/repo"
+            spellcheck="false"
+          />
+        </label>
+        <button id="github-btn" type="button" class="primary">检查更新</button>
+        <div id="github-ask" class="ask" hidden></div>
+      </section>
+
+      <section class="card">
+        <h2>反馈问题</h2>
+        <p class="hint">
+          遇到 bug 或有改进建议，到 GitHub 提 issue。打开时会自动带上扩展版本和数据库信息，方便定位。
+        </p>
+        <button id="feedback-btn" type="button">到 GitHub 提 issue</button>
+      </section>
+
+      <div id="status" class="status" hidden></div>
+    </div>
+    <script src="lib/search-core.js"></script>
+    <script src="lib/zip-read.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

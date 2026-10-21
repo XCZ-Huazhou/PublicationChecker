@@ -11,6 +11,15 @@ const STAGE = path.join(SRC, '..', '.chrome-build-pubcheck');
 const ZIP = 'D:\\Softwares\\DataAnalysis\\R\\Rtools\\rtools45\\usr\\bin\\zip.exe';
 const ZIP_OUT = path.join(SRC, '..', 'PublicationChecker-chrome.zip');
 
+/** 递归删掉手工备份文件（*.bak / *.bak-20261016-112511）：既不入库也不进包 */
+function dropBak(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) dropBak(p);
+    else if (/\.bak(-[\d-]+)?$/i.test(e.name)) fs.rmSync(p, { force: true });
+  }
+}
+
 // 1. staging：运行时文件进包，源数据(raw/tools)、仓库元数据与构建物料不进
 fs.rmSync(STAGE, { recursive: true, force: true });
 fs.cpSync(SRC, STAGE, { recursive: true });
@@ -22,6 +31,7 @@ for (const skip of [
 ]) {
   fs.rmSync(path.join(STAGE, skip), { recursive: true, force: true });
 }
+dropBak(STAGE);
 
 // 2. 打包
 fs.rmSync(ZIP_OUT, { force: true });

@@ -78,6 +78,40 @@ button {
   line-height: 1.45;
 }
 
+.name {
+  font-weight: 700;
+  margin-bottom: 4px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.meta-line {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 2px 0 4px;
+  word-break: break-all;
+}
+
+.if-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8eefc;
+  color: #2d5ac8;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+  border: 1px solid #c7d2fe;
+}
+
+.if-pill b {
+  font-size: 13px;
+  font-weight: 800;
+  margin-left: 2px;
+  color: #1e3a8a;
+}
+
 .badge {
   display: inline-block;
   margin: 4px 4px 0 0;
@@ -89,14 +123,133 @@ button {
   color: #2d5ac8;
 }
 
-.name {
+.badge.q1 { background: #d1fae5; color: #0f766e; }
+.badge.q2 { background: #dbeafe; color: #0369a1; }
+.badge.q3 { background: #fef3c7; color: #b45309; }
+.badge.q4 { background: #f3f4f6; color: #6b7280; }
+.badge.warn { background: #fee2e2; color: #b91c1c; }
+
+.top-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font-size: 10px;
   font-weight: 700;
-  margin-bottom: 4px;
+  vertical-align: middle;
 }
 
-.more {
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-top: 8px;
-  color: #2d5ac8;
+}
+
+.cell {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.lab { color: #4b5563; font-size: 12px; font-weight: 700; }
+.val { font-weight: 700; font-size: 15px; margin-top: 2px; }
+.sub { color: #6b7280; font-size: 11px; margin-top: 2px; word-break: break-word; }
+
+.list h3 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
   cursor: pointer;
-  text-decoration: underline;
+  background: #fff;
+  margin-bottom: 6px;
+}
+
+.item:hover {
+  border-color: #c7d2fe;
+  background: #f8fafc;
+}
+
+.item-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.item-row {
+  color: #6b7280;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.link-btn {
+  /* popup 高度上限 600px，内容多了必然滚动；让这个入口常驻底部 */
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  border: 1px dashed #c7d2fe;
+  background: #fff;
+  color: #2d5ac8;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  background: #eef2ff;
+  border-color: #2d5ac8;
+}
+
+/* 查询词高亮：只加粗在列表里不够显眼，再上主题蓝 + 极浅底 */
+.name b,
+.item-name b {
+  color: #2d5ac8;
+  font-weight: 800;
+  background: #e8eefc;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.more-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border: 1px dashed #c7d2fe;
+  background: #f8fafc;
+  color: #2d5ac8;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more-btn:hover {
+  background: #eef2ff;
+  border-color: #2d5ac8;
+}
+
+/* 候选序号：只有多个匹配项时才出现 */
+.idx {
+  display: inline-block;
+  min-width: 17px;
+  margin-right: 5px;
+  color: #6b7280;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

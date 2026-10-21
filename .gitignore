@@ -20,4 +20,8 @@ __pycache__/
 *.log
 .env
 
+# 手工备份文件（如 background.js.bak-20261016-112511），不入仓库也不入包
+*.bak
+*.bak-*
+
 data/journals.json

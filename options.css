@@ -1,0 +1,244 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f1f5f9;
+  color: #111827;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+/* 扩展版本号：贴页头右侧 */
+.ver {
+  margin-left: auto;
+  color: #6b7280;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #2d5ac8;
+  color: #fff;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+header .hint {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 6px 0 10px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.hint code {
+  background: #f3f4f6;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+.info {
+  color: #111827;
+  font-size: 12px;
+}
+
+.info dl {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 3px 10px;
+  margin: 0;
+}
+
+.info dt {
+  color: #111827;
+}
+
+.info dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.info .badge-src {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #2d5ac8;
+}
+
+.info .badge-src.override {
+  background: #d1fae5;
+  color: #0f766e;
+}
+
+.field {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.field-label {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #111827;
+  background: #fff;
+  outline: none;
+}
+
+.field input:focus {
+  border-color: #2d5ac8;
+}
+
+button {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #c7d2fe;
+  background: #f8fafc;
+}
+
+button.primary {
+  border-color: #2d5ac8;
+  background: #2d5ac8;
+  color: #fff;
+}
+
+button.primary:hover {
+  border-color: #244ea8;
+  background: #244ea8;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.status {
+  margin-top: 6px;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.status.error {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.status.ok {
+  background: #d1fae5;
+  border-color: #a7f3d0;
+  color: #0f766e;
+}
+
+/* GitHub 卡片里的内联确认区（替代原生 window.confirm 弹窗） */
+.ask {
+  margin-top: 10px;
+  border: 1px solid #c7d2fe;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.ask-info {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 3px 10px;
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+
+.ask-info dt {
+  color: #6b7280;
+}
+
+.ask-info dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.ask-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 降级警告：远端 Release 比当前扩展更旧时，整块和「判断」那行标红 */
+.ask.ask-warn {
+  border-color: #fca5a5;
+  background: #fff7f7;
+}
+
+.ask-info dt.warn,
+.ask-info dd.warn {
+  color: #b91c1c;
+  font-weight: 700;
+}

@@ -14,12 +14,22 @@ const ZEN_EXT = 'D:\\Softwares\\DailyWork\\ZenBrowser\\Profile\\extensions';
 const GECKO_ID = 'publication-checker@cstai.local';
 const XPI_OUT = path.join(SRC, '..', 'PublicationChecker-firefox.xpi');
 
+/** 递归删掉手工备份文件（*.bak / *.bak-20261016-112511）：既不入库也不进包 */
+function dropBak(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) dropBak(p);
+    else if (/\.bak(-[\d-]+)?$/i.test(e.name)) fs.rmSync(p, { force: true });
+  }
+}
+
 // 1. staging：完整复制后剔除源数据与仓库元数据（raw/tools 为源数据，不进包）
 fs.rmSync(STAGE, { recursive: true, force: true });
 fs.cpSync(SRC, STAGE, { recursive: true });
 for (const skip of ['.git', '.gitignore', 'raw', 'tools', 'build-firefox.js', 'build-chrome.js', 'data/journals.json']) {
   fs.rmSync(path.join(STAGE, skip), { recursive: true, force: true });
 }
+dropBak(STAGE);
 
 // 2. MV2 清单覆盖 MV3，补 gecko id
 // （注意：background-mv2.js 被 MV2 清单引用，必须保留在包内）

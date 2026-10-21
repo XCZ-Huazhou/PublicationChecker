@@ -19,9 +19,10 @@
         <input id="q" type="search" placeholder="期刊名或 ISSN" autofocus />
         <button id="go">查询</button>
       </div>
-      <p class="tip">建议选中完整英文刊名后右键查询；只选片段时请在候选列表中自行挑选。</p>
+      <p class="tip" id="tip">选中刊名右键查询后，可在浮层顶部输入框直接改刊名回车重查；无选中时右键页面选「查询期刊分区（手动输入刊名）」。</p>
       <div id="status" class="status" hidden></div>
       <div id="result" class="result" hidden></div>
+      <button id="db" class="link-btn" type="button">关于 PublicationChecker</button>
     </div>
     <script src="lib/search-core.js"></script>
     <script src="popup.js"></script>
