@@ -46,14 +46,19 @@ execFileSync(ZIP, ['-r', '-X', XPI_OUT, '.'], {
   cwd: STAGE,
   stdio: 'ignore',
 });
+fs.rmSync(STAGE, { recursive: true, force: true }); // 别把 staging 残骸留在仓库外面
 
 // 4. 部署到 Zen
-if (fs.existsSync(path.join(ZEN_EXT, GECKO_ID + '.xpi'))) {
+const zenXpi = path.join(ZEN_EXT, GECKO_ID + '.xpi');
+if (fs.existsSync(zenXpi)) {
   try {
-    fs.copyFileSync(XPI_OUT, path.join(ZEN_EXT, GECKO_ID + '.xpi'));
+    fs.copyFileSync(XPI_OUT, zenXpi);
     console.log('已部署到 Zen profile，重启 Zen 生效。');
   } catch {
-    console.log('部署失败：Zen 运行中锁定了文件，请关闭 Zen 后重跑本脚本。');
+    console.log(
+      '部署失败：Zen 正在运行并锁定了 ' + zenXpi + '\n' +
+        '  → 关闭 Zen 后重跑本脚本即可；xpi 已经打好，也可以手动复制过去。'
+    );
   }
 } else {
   console.log('未检测到 Zen profile，跳过部署。');
