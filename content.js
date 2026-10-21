@@ -337,7 +337,9 @@
     bodyEl.innerHTML =
       '<div class="head"><div class="title">' +
       highlight(j.name || "未知期刊", currentQuery) +
-      "</div></div>" +      '<div class="meta">ISSN ' +
+      (jcr.if ? '<span class="if-pill">IF <b>' + esc(jcr.if) + "</b></span>" : "") +
+      "</div></div>" +
+      '<div class="meta">ISSN ' +
       esc(j.issn || "—") +
       (j.eissn ? " · E-ISSN " + esc(j.eissn) : "") +
       "</div>" +
@@ -347,9 +349,6 @@
       '<div class="grid">' +
       '<div class="cell"><div class="lab">JCR 2025</div><div class="val">' +
       esc(best || "—") +
-      (jcr.if
-        ? '<span class="if-pill">IF <b>' + esc(jcr.if) + "</b></span>"
-        : "") +
       '</div><div class="sub">' +
       (jcrCats || "—") +
       "</div></div>" +
