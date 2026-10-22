@@ -31,7 +31,7 @@ header {
 /* 扩展版本号：贴页头右侧 */
 .ver {
   margin-left: auto;
-  color: #6b7280;
+  color: #111827;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -50,7 +50,7 @@ header {
 }
 
 header .hint {
-  color: #6b7280;
+  color: #111827;
   font-size: 12px;
 }
 
@@ -70,7 +70,7 @@ header .hint {
 
 .hint {
   margin: 6px 0 10px;
-  color: #6b7280;
+  color: #111827;
   font-size: 12px;
 }
 
@@ -124,7 +124,7 @@ header .hint {
 
 .field-label {
   display: block;
-  color: #6b7280;
+  color: #111827;
   font-size: 12px;
   margin-bottom: 4px;
 }
@@ -218,7 +218,7 @@ button:disabled {
 }
 
 .ask-info dt {
-  color: #6b7280;
+  color: #111827;
 }
 
 .ask-info dd {

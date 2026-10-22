@@ -208,7 +208,7 @@ function renderVersion() {
   const el = $("ext-version");
   if (!el) return;
   const ver = currentVersion();
-  el.textContent = ver ? "v" + ver : "";
+  el.textContent = ver ? "当前版本： v" + ver : "";
 }
 
 async function refreshInfo() {
