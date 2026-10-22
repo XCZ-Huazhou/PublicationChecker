@@ -149,6 +149,8 @@ function renderOthers(hits) {
       const idx = Number(el.dataset.idx);
       const hit = hits[idx];
       if (hit) {
+        // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
+        $("q").value = hit.journal.name;
         renderBest(hit);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }

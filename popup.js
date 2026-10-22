@@ -169,6 +169,8 @@ function renderHits(hits, total) {
       const idx = Number(el.dataset.idx);
       const hit = hits[idx];
       if (hit) {
+        // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
+        $("q").value = hit.journal.name;
         $("result").innerHTML = renderJournal(hit.journal, lastQuery);
         // 进了详情页：使用提示和「共 N 条」都没用了，收起来腾出高度
         $("tip").hidden = true;

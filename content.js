@@ -399,7 +399,11 @@
     bodyEl.querySelectorAll(".item").forEach(function (el) {
       el.addEventListener("click", function () {
         const idx = Number(el.getAttribute("data-idx"));
-        if (currentHits[idx]) renderHit(currentHits[idx]);
+        const hit = currentHits[idx];
+        if (!hit) return;
+        // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
+        if (inputEl && hit.journal && hit.journal.name) inputEl.value = hit.journal.name;
+        renderHit(hit);
       });
     });
 
