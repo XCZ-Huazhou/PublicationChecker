@@ -206,7 +206,9 @@ async function loadMore() {
 async function render() {
   $("status").hidden = false;
   $("status").textContent = "本地检索中…";
-  $("tip").hidden = false;
+  // 出结果后收起使用提示：popup 高度有上限，提示占两行会把第一个结果
+  // 挤到折叠线 / 钉底按钮后面，看起来像"第一个结果没显示全"。
+  $("tip").hidden = true;
   try {
     const res = await PublicationChecker.searchJournals(lastQuery, lastLimit);
     if (!res.hits.length) {
@@ -238,9 +240,10 @@ function scheduleLive() {
   clearTimeout(liveTimer);
   const q = $("q").value.trim();
   if (!q) {
-    // 清空输入：把上一次的结果收起来
+    // 清空输入：把上一次的结果收起来，提示重新露出
     $("status").hidden = true;
     $("result").hidden = true;
+    $("tip").hidden = false;
     return;
   }
   liveTimer = setTimeout(run, 200);
