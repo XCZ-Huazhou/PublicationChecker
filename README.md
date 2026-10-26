@@ -42,6 +42,8 @@
 
 ![右键菜单里的「查询期刊分区：Conservation Biology」](docs/images/context-menu.png)
 
+![网页上弹出的结果卡片，底部显示命中总数](docs/images/overlay.png)
+
 ### 用法二：点工具栏图标 → 直接输入
 
 没有现成刊名、或者想直接搜？点浏览器工具栏上的扩展图标，在弹窗里输入期刊名或 ISSN 号，回车即查。
