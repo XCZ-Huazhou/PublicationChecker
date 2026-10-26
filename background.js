@@ -2,7 +2,6 @@
 importScripts("lib/search-core.js");
 
 const MENU_ID = "publication-checker-lookup";
-const MENU_INPUT_ID = "publication-checker-input";
 const api =
   typeof browser !== "undefined" && browser && browser.runtime
     ? browser
@@ -38,11 +37,6 @@ function ensureMenu() {
       // ignore: nothing to remove
     }
     mk({ id: MENU_ID, title: "查询期刊分区：%s", contexts: ["selection"] });
-    mk({
-      id: MENU_INPUT_ID,
-      title: "查询期刊分区（手动输入刊名）",
-      contexts: ["page", "image"],
-    });
   })();
 
   const p = menuInFlight;
@@ -81,14 +75,10 @@ api.runtime.onInstalled.addListener(ensureMenu);
 api.runtime.onStartup.addListener(ensureMenu);
 
 api.contextMenus.onClicked.addListener(async function (info, tab) {
-  const isLookup = info.menuItemId === MENU_ID;
-  const isInput = info.menuItemId === MENU_INPUT_ID;
-  if (!isLookup && !isInput) return;
+  if (info.menuItemId !== MENU_ID) return;
 
-  const query = isLookup
-    ? PublicationChecker.cleanQuery(info.selectionText || "")
-    : "";
-  if (isLookup && !query) return;
+  const query = PublicationChecker.cleanQuery(info.selectionText || "");
+  if (!query) return;
 
   if (!tab || tab.id == null) {
     openFallbackPage(query);

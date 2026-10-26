@@ -1,8 +1,8 @@
 /**
  * PublicationChecker 页面浮层
- * 仅在用户右键点菜单后显示，选中文字不会自动弹出。
- * 卡片顶部带可编辑搜索框：识别不准可直接改刊名回车重查；
- * 无选中时右键「手动输入刊名」打开空卡片，输入后回车查询。
+ * 仅在用户选中文字后右键点菜单时显示结果，不会自动弹出。
+ * 卡片顶部带可编辑搜索框：识别不准可直接改刊名回车重查。
+ * 不选中、直接手动搜的入口在工具栏弹窗（popup），不在页面浮层。
  */
 (function () {
   "use strict";
@@ -533,20 +533,10 @@
   function openCard(rect, query) {
     ensureDom();
     if (rect) lastRect = rect;
-    if (query) {
-      // 「选中刊名右键查询」只展示结果，不抢输入框焦点，
-      // 这样鼠标移开卡片 350ms 后仍会自动关闭；想改刊名点一下输入框即可。
-      lookup(query, null);
-    } else {
-      // 「手动输入刊名」入口：空卡片直接聚焦，输入期间不自动关闭。
-      if (inputEl) inputEl.value = "";
-      currentHits = [];
-      showStatus(EMPTY_HINT);
-      place(cardEl, lastRect, 10);
-      try {
-        inputEl.focus();
-      } catch (e) {}
-    }
+    if (!query) return;
+    // 「选中刊名右键查询」只展示结果，不抢输入框焦点，
+    // 这样鼠标移开卡片 500ms 后仍会自动关闭；想改刊名点一下输入框即可。
+    lookup(query, null);
   }
 
   function selectionBox() {
@@ -564,8 +554,7 @@
     if (msg.type === "publication-checker:show") {
       const q = PublicationCheckerQueryClean(msg.query);
       const info = selectionBox();
-      // 手动输入模式（无 query）不沿用旧位置，居中弹出
-      const rect = info ? info.rect : q ? lastRect : null;
+      const rect = info ? info.rect : lastRect;
       openCard(rect, q);
       sendResponse({ ok: true });
       return true;

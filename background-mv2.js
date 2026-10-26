@@ -3,7 +3,6 @@
   "use strict";
 
   var MENU_ID = "publication-checker-lookup";
-  var MENU_INPUT_ID = "publication-checker-input";
   var api = typeof browser !== "undefined" && browser.runtime ? browser : chrome;
 
   function openFallbackPage(query) {
@@ -33,11 +32,6 @@
     api.contextMenus.removeAll(function () {
       void api.runtime.lastError;
       mk({ id: MENU_ID, title: "查询期刊分区：%s", contexts: ["selection"] });
-      mk({
-        id: MENU_INPUT_ID,
-        title: "查询期刊分区（手动输入刊名）",
-        contexts: ["page", "image"],
-      });
       menuInFlight = false;
     });
   }
@@ -47,14 +41,10 @@
   api.runtime.onStartup.addListener(ensureMenu);
 
   api.contextMenus.onClicked.addListener(function (info, tab) {
-    var isLookup = info.menuItemId === MENU_ID;
-    var isInput = info.menuItemId === MENU_INPUT_ID;
-    if (!isLookup && !isInput) return;
+    if (info.menuItemId !== MENU_ID) return;
 
-    var query = isLookup
-      ? PublicationChecker.cleanQuery(info.selectionText || "")
-      : "";
-    if (isLookup && !query) return;
+    var query = PublicationChecker.cleanQuery(info.selectionText || "");
+    if (!query) return;
 
     function fallback() {
       openFallbackPage(query);
