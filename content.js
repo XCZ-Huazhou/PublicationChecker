@@ -124,6 +124,15 @@
     cardEl.querySelector(".go").addEventListener("click", submitQuery);
     cardEl.querySelector(".x").addEventListener("click", hideCard);
 
+    // 卡片住在 Shadow DOM 里，keydown 冒泡出影子树时 target 会被重定向成宿主
+    // div（而不是 input）。宿主页面的全局快捷键靠「target 是不是输入框」来
+    // 判断该不该放行，重定向后它看到的是 div，于是把打字当成快捷键 ——
+    // GitHub 的 s / 斜杠 会直接把焦点抢去站内搜索。在卡片这层截停，
+    // 页面文档就收不到这些按键。
+    cardEl.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+    });
+
     cardEl.addEventListener("mouseenter", function () {
       clearTimeout(hideTimer);
     });
