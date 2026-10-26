@@ -54,6 +54,17 @@ header .hint {
   font-size: 12px;
 }
 
+/* 页头的仓库入口 */
+.repo-link {
+  color: #2d5ac8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.repo-link:hover {
+  text-decoration: underline;
+}
+
 .card {
   background: #fff;
   border: 1px solid #e5e7eb;

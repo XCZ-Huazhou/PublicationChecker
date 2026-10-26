@@ -799,6 +799,8 @@ function setupGithubUi() {
     "自动识别浏览器，从 " +
     GITHUB_REPO +
     " 拉取对应版本的期刊库，并在更新前告诉你版本号。";
+  const home = $("repo-home");
+  if (home) home.href = "https://github.com/" + GITHUB_REPO;
 }
 
 async function init() {
