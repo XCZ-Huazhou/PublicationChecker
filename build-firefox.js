@@ -35,7 +35,7 @@ const ZIP = resolveZip();
 // Zen 的 profile 扩展目录：换 profile 就改这里，或设环境变量 PC_ZEN_EXT
 const ZEN_EXT =
   process.env.PC_ZEN_EXT || 'D:\\Softwares\\DailyWork\\ZenBrowser\\Profile\\extensions';
-const GECKO_ID = 'publication-checker@cstai.local';
+const GECKO_ID = 'publication-checker@xcz-huazhou';
 const XPI_OUT = path.join(SRC, '..', 'PublicationChecker-firefox.xpi');
 
 /** 递归删掉手工备份文件（*.bak / *.bak-20261016-112511）：既不入库也不进包 */
