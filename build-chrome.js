@@ -67,7 +67,7 @@ function fmtSize(n) {
 fs.rmSync(STAGE, { recursive: true, force: true });
 fs.cpSync(SRC, STAGE, { recursive: true });
 for (const skip of [
-  '.git', '.gitignore', 'raw', 'tools',
+  '.git', '.gitignore', 'raw', 'tools', 'docs',
   'build-firefox.js', 'build-chrome.js',
   'manifest-mv2.json', 'background-mv2.js',
   'data/journals.json'
