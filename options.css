@@ -101,13 +101,6 @@ header .hint {
   font-size: 12px;
 }
 
-.hint code {
-  background: #f3f4f6;
-  border-radius: 5px;
-  padding: 1px 5px;
-  font-size: 11px;
-}
-
 .info {
   color: #111827;
   font-size: 12px;
@@ -118,6 +111,7 @@ header .hint {
   grid-template-columns: 96px 1fr;
   gap: 3px 10px;
   margin: 0;
+  align-items: center;
 }
 
 .info dt {
@@ -142,34 +136,6 @@ header .hint {
 .info .badge-src.override {
   background: #d1fae5;
   color: #0f766e;
-}
-
-.field {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.field-label {
-  display: block;
-  color: #111827;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.field input {
-  width: 100%;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 7px 10px;
-  font-size: 13px;
-  font-family: inherit;
-  color: #111827;
-  background: #fff;
-  outline: none;
-}
-
-.field input:focus {
-  border-color: #2d5ac8;
 }
 
 button {
@@ -225,69 +191,4 @@ button:disabled {
   background: #d1fae5;
   border-color: #a7f3d0;
   color: #0f766e;
-}
-
-/* GitHub 卡片里的内联确认区（替代原生 window.confirm 弹窗） */
-.ask {
-  margin-top: 10px;
-  border: 1px solid #c7d2fe;
-  background: #f8fafc;
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.ask-info {
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 3px 10px;
-  margin: 0 0 10px;
-  font-size: 12px;
-}
-
-.ask-info dt {
-  color: #111827;
-}
-
-.ask-info dd {
-  margin: 0;
-  word-break: break-all;
-}
-
-.ask-actions {
-  display: flex;
-  gap: 8px;
-}
-
-/* 降级警告：远端 Release 比当前扩展更旧时，整块和「判断」那行标红 */
-.ask.ask-warn {
-  border-color: #fca5a5;
-  background: #fff7f7;
-}
-
-.ask-info dt.warn,
-.ask-info dd.warn {
-  color: #b91c1c;
-  font-weight: 700;
-}
-
-/* 「需要重新安装」提醒块里的一键下载入口（锚点做成按钮样式） */
-#github-upgrade .hint {
-  margin: 0 0 8px;
-}
-
-.upgrade-link {
-  display: inline-block;
-  border: 1px solid #2d5ac8;
-  background: #2d5ac8;
-  color: #fff;
-  border-radius: 10px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.upgrade-link:hover {
-  border-color: #244ea8;
-  background: #244ea8;
 }

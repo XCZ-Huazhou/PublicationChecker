@@ -195,59 +195,91 @@
     el.style.visibility = "visible";
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  function h(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = String(text);
+    return n;
+  }
+
+  /** 把若干行文本/节点用 <br> 串起来 */
+  function lines(parts) {
+    const frag = document.createDocumentFragment();
+    parts.forEach(function (p, i) {
+      if (i) frag.appendChild(document.createElement("br"));
+      frag.appendChild(typeof p === "string" ? document.createTextNode(p) : p);
+    });
+    return frag;
   }
 
   /** 把刊名里与查询匹配的部分加粗（按查询的每个词，不区分大小写） */
-  function highlight(name, query) {
-    var text = String(name || "");
-    var q = String(query || "").trim();
-    if (!q) return esc(text);
+  function highlightNode(name, query) {
+    const text = String(name || "");
+    const q = String(query || "").trim();
+    const frag = document.createDocumentFragment();
+    const merged = [];
 
-    var lower = text.toLowerCase();
-    var spans = [];
-    var words = q.toLowerCase().split(/\s+/);
-    for (var wi = 0; wi < words.length; wi++) {
-      var w = words[wi];
-      if (!w) continue;
-      var from = 0;
-      for (;;) {
-        var i = lower.indexOf(w, from);
-        if (i < 0) break;
-        spans.push([i, i + w.length]);
-        from = i + w.length;
-      }
+    if (q) {
+      const lower = text.toLowerCase();
+      const spans = [];
+      q.toLowerCase()
+        .split(/\s+/)
+        .forEach(function (w) {
+          if (!w) return;
+          let from = 0;
+          for (;;) {
+            const i = lower.indexOf(w, from);
+            if (i < 0) break;
+            spans.push([i, i + w.length]);
+            from = i + w.length;
+          }
+        });
+      spans.sort(function (a, b) {
+        return a[0] - b[0];
+      });
+      // 合并重叠区间，避免嵌套 <b>
+      spans.forEach(function (s) {
+        const last = merged[merged.length - 1];
+        if (last && s[0] <= last[1]) last[1] = Math.max(last[1], s[1]);
+        else merged.push([s[0], s[1]]);
+      });
     }
-    if (!spans.length) return esc(text);
 
-    // 合并重叠区间，避免嵌套 <b>
-    spans.sort(function (a, b) {
-      return a[0] - b[0];
+    if (!merged.length) {
+      frag.appendChild(document.createTextNode(text));
+      return frag;
+    }
+
+    let at = 0;
+    merged.forEach(function (span) {
+      if (span[0] > at) frag.appendChild(document.createTextNode(text.slice(at, span[0])));
+      frag.appendChild(h("b", null, text.slice(span[0], span[1])));
+      at = span[1];
     });
-    var merged = [];
-    for (var si = 0; si < spans.length; si++) {
-      var s = spans[si];
-      var last = merged[merged.length - 1];
-      if (last && s[0] <= last[1]) last[1] = Math.max(last[1], s[1]);
-      else merged.push([s[0], s[1]]);
-    }
+    if (at < text.length) frag.appendChild(document.createTextNode(text.slice(at)));
+    return frag;
+  }
 
-    var out = "";
-    var at = 0;
-    for (var mi = 0; mi < merged.length; mi++) {
-      out +=
-        esc(text.slice(at, merged[mi][0])) +
-        "<b>" +
-        esc(text.slice(merged[mi][0], merged[mi][1])) +
-        "</b>";
-      at = merged[mi][1];
+  function zoneCell(lab, valText, sub) {
+    const cell = h("div", "cell");
+    cell.appendChild(h("div", "lab", lab));
+    cell.appendChild(h("div", "val", valText));
+    const s = h("div", "sub");
+    if (sub instanceof Node) s.appendChild(sub);
+    else if (sub != null) s.textContent = String(sub);
+    cell.appendChild(s);
+    return cell;
+  }
+
+  /** 首行「主分类 + 可选 Top 小标」 */
+  function majorLine(text, isTop) {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(document.createTextNode(String(text)));
+    if (isTop) {
+      frag.appendChild(document.createTextNode(" "));
+      frag.appendChild(h("span", "top-tag", "Top"));
     }
-    return out + esc(text.slice(at));
+    return frag;
   }
 
   function isTopFlag(v) {
@@ -266,7 +298,7 @@
 
   function showStatus(text) {
     ensureDom();
-    bodyEl.innerHTML = '<div class="status">' + esc(text) + "</div>";
+    bodyEl.replaceChildren(h("div", "status", text));
   }
 
   function renderHit(hit) {
@@ -275,144 +307,148 @@
     const cas = j.cas || {};
     const xr = j.xr || {};
     const best = jcr.best || "";
-    const badges = [];
-    if (best)
-      badges.push('<span class="badge ' + zoneCls(best) + '">JCR ' + esc(best) + "</span>");
-    if (cas.zone)
-      badges.push(
-        '<span class="badge ' + zoneCls(cas.zone) + '">中科院 ' + esc(cas.zone) + "</span>"
-      );
-    if (xr.zone)
-      badges.push(
-        '<span class="badge ' + zoneCls(xr.zone) + '">新锐 ' + esc(xr.zone) + "</span>"
-      );
-    if (j.warn) badges.push('<span class="badge warn">预警 ' + esc(j.warn) + "</span>");
-    if (xr.warn) badges.push('<span class="badge warn">新锐标记 ' + esc(xr.warn) + "</span>");
+    const frag = document.createDocumentFragment();
 
-    const jcrCats = (jcr.cats || [])
-      .slice(0, 3)
-      .map(function (c) {
-        return esc(c[0] || "") + " " + esc(c[1] || "") + (c[2] ? " · " + esc(c[2]) : "");
-      })
-      .join("<br>");
-    const casMinors = (cas.minors || [])
-      .slice(0, 3)
-      .map(function (m) {
-        return esc(m[0] || "") + " " + esc(m[1] || "");
-      })
-      .join("<br>");
-    const xrMinors = (xr.minors || [])
-      .slice(0, 3)
-      .map(function (m) {
-        return esc(m[0] || "") + " " + esc(m[1] || "");
-      })
-      .join("<br>");
+    const head = h("div", "head");
+    const title = h("div", "title");
+    title.appendChild(highlightNode(j.name || "未知期刊", currentQuery));
+    if (jcr.if) {
+      const pill = h("span", "if-pill", "IF ");
+      pill.appendChild(h("b", null, jcr.if));
+      title.appendChild(pill);
+    }
+    head.appendChild(title);
+    frag.appendChild(head);
+
+    frag.appendChild(
+      h("div", "meta", "ISSN " + (j.issn || "—") + (j.eissn ? " · E-ISSN " + j.eissn : ""))
+    );
+
+    const badges = h("div", "badges");
+    if (best) badges.appendChild(h("span", "badge " + zoneCls(best), "JCR " + best));
+    if (cas.zone)
+      badges.appendChild(h("span", "badge " + zoneCls(cas.zone), "中科院 " + cas.zone));
+    if (xr.zone) badges.appendChild(h("span", "badge " + zoneCls(xr.zone), "新锐 " + xr.zone));
+    if (j.warn) badges.appendChild(h("span", "badge warn", "预警 " + j.warn));
+    if (xr.warn) badges.appendChild(h("span", "badge warn", "新锐标记 " + xr.warn));
+    frag.appendChild(badges);
+
+    const jcrCats = (jcr.cats || []).slice(0, 3).map(function (c) {
+      return (c[0] || "") + " " + (c[1] || "") + (c[2] ? " · " + c[2] : "");
+    });
+    const casMinors = (cas.minors || []).slice(0, 3).map(function (m) {
+      return (m[0] || "") + " " + (m[1] || "");
+    });
+    const xrMinors = (xr.minors || []).slice(0, 3).map(function (m) {
+      return (m[0] || "") + " " + (m[1] || "");
+    });
+
+    const casSub = cas.zone
+      ? lines([
+          majorLine(cas.major || "", isTopFlag(cas.top)),
+          casMinors.length ? lines(casMinors) : "—",
+        ])
+      : jcr.wos && /ESCI|AHCI|ESCI/i.test(jcr.wos)
+        ? "源数据未收录（该刊多为 " + jcr.wos + "）"
+        : "源数据未收录于中科院2025升级版";
+
+    const pubSub = document.createDocumentFragment();
+    if (j.review && /是|Yes/i.test(j.review))
+      pubSub.appendChild(document.createTextNode("综述期刊 · "));
+    if (j.lang) {
+      pubSub.appendChild(document.createTextNode(j.lang));
+      pubSub.appendChild(document.createElement("br"));
+    }
+    if (j.publisher) pubSub.appendChild(document.createTextNode(j.publisher));
+    if (j.cn) {
+      if (j.publisher) pubSub.appendChild(document.createElement("br"));
+      pubSub.appendChild(document.createTextNode("中文名：" + j.cn));
+    }
+
+    const grid = h("div", "grid");
+    grid.appendChild(zoneCell("JCR 2025", best || "—", jcrCats.length ? lines(jcrCats) : "—"));
+    grid.appendChild(zoneCell("中科院 2025升级版", cas.zone || "未收录", casSub));
+    grid.appendChild(
+      zoneCell(
+        "新锐 2026",
+        xr.zone || "—",
+        lines([
+          majorLine(xr.major || "", isTopFlag(xr.top)),
+          xrMinors.length ? lines(xrMinors) : "—",
+        ])
+      )
+    );
+    grid.appendChild(zoneCell("收录与出版", jcr.wos || "—", pubSub));
+    frag.appendChild(grid);
 
     const otherRows = currentHits
-      .map(function (h, i) {
-        return { h: h, i: i };
+      .map(function (row, i) {
+        return { row: row, i: i };
       })
-      .filter(function (row) {
-        return row.h.journal && row.h.journal.name !== j.name;
+      .filter(function (item) {
+        return item.row.journal && item.row.journal.name !== j.name;
       });
 
-    const shown = otherRows;
-    const others = shown
-      .map(function (row) {
-        const jj = row.h.journal;
-        return (
-          '<div class="item" data-idx="' +
-          row.i +
-          '"><div class="n">' +
-          '<span class="idx">' +
-          (row.i + 1) +
-          ".</span>" +
-          highlight(jj.name, currentQuery) +
-          '</div><div class="r">JCR ' +
-          esc((jj.jcr && jj.jcr.best) || "—") +
-          " · 中科院 " +
-          esc((jj.cas && jj.cas.zone) || "未收录") +
-          " · 新锐 " +
-          esc((jj.xr && jj.xr.zone) || "—") +
-          (jj.jcr && jj.jcr.if ? " · IF " + esc(jj.jcr.if) : "") +
-          "</div></div>"
+    if (otherRows.length) {
+      const list = h("div", "list");
+      list.appendChild(
+        h(
+          "div",
+          "list-title",
+          "其他匹配：显示 " +
+            otherRows.length +
+            " / 共 " +
+            currentTotal +
+            " 条（按字母序，继续输入可缩小范围）"
+        )
+      );
+      otherRows.forEach(function (item) {
+        const jj = item.row.journal;
+        const row = h("div", "item");
+        row.setAttribute("data-idx", String(item.i));
+        const nameEl = h("div", "n");
+        nameEl.appendChild(h("span", "idx", item.i + 1 + "."));
+        nameEl.appendChild(highlightNode(jj.name, currentQuery));
+        row.appendChild(nameEl);
+        row.appendChild(
+          h(
+            "div",
+            "r",
+            "JCR " +
+              ((jj.jcr && jj.jcr.best) || "—") +
+              " · 中科院 " +
+              ((jj.cas && jj.cas.zone) || "未收录") +
+              " · 新锐 " +
+              ((jj.xr && jj.xr.zone) || "—") +
+              (jj.jcr && jj.jcr.if ? " · IF " + jj.jcr.if : "")
+          )
         );
-      })
-      .join("");
+        list.appendChild(row);
+      });
+      frag.appendChild(list);
+    }
 
-    const casIsTop = isTopFlag(cas.top);
-    const xrIsTop = isTopFlag(xr.top);
+    if (currentTotal > currentHits.length) {
+      const more = h(
+        "button",
+        "more-btn",
+        "继续查看（还有 " + (currentTotal - currentHits.length) + " 条，每次多显示 10 条）"
+      );
+      more.type = "button";
+      frag.appendChild(more);
+    }
 
-    bodyEl.innerHTML =
-      '<div class="head"><div class="title">' +
-      highlight(j.name || "未知期刊", currentQuery) +
-      (jcr.if ? '<span class="if-pill">IF <b>' + esc(jcr.if) + "</b></span>" : "") +
-      "</div></div>" +
-      '<div class="meta">ISSN ' +
-      esc(j.issn || "—") +
-      (j.eissn ? " · E-ISSN " + esc(j.eissn) : "") +
-      "</div>" +
-      '<div class="badges">' +
-      badges.join("") +
-      "</div>" +
-      '<div class="grid">' +
-      '<div class="cell"><div class="lab">JCR 2025</div><div class="val">' +
-      esc(best || "—") +
-      '</div><div class="sub">' +
-      (jcrCats || "—") +
-      "</div></div>" +
-      '<div class="cell"><div class="lab">中科院 2025升级版</div><div class="val">' +
-      esc(cas.zone || "未收录") +
-      '</div><div class="sub">' +
-      (cas.zone
-        ? esc(cas.major || "") +
-          (casIsTop ? ' <span class="top-tag">Top</span>' : "") +
-          "<br>" +
-          (casMinors || "—")
-        : (jcr.wos && /ESCI|AHCI|ESCI/i.test(jcr.wos)
-            ? "源数据未收录（该刊多为 " + esc(jcr.wos) + "）"
-            : "源数据未收录于中科院2025升级版")) +
-      "</div></div>" +
-      '<div class="cell"><div class="lab">新锐 2026</div><div class="val">' +
-      esc(xr.zone || "—") +
-      '</div><div class="sub">' +
-      esc(xr.major || "") +
-      (xrIsTop ? '<span class="top-tag">Top</span>' : "") +
-      "<br>" +
-      (xrMinors || "—") +
-      "</div></div>" +
-      '<div class="cell"><div class="lab">收录与出版</div><div class="val">' +
-      esc(jcr.wos || "—") +
-      '</div><div class="sub">' +
-      (j.review && /是|Yes/i.test(j.review) ? "综述期刊 · " : "") +
-      (j.lang ? esc(j.lang) + "<br>" : "") +
-      (j.publisher ? esc(j.publisher) : "") +
-      (j.cn ? (j.publisher ? "<br>" : "") + "中文名：" + esc(j.cn) : "") +
-      "</div></div>" +
-      "</div>" +
-      (others
-        ? '<div class="list"><div class="list-title">其他匹配：显示 ' +
-          shown.length +
-          " / 共 " +
-          currentTotal +
-          " 条（按字母序，继续输入可缩小范围）</div>" +
-          others +
-          "</div>"
-        : "") +
-      (currentTotal > currentHits.length
-        ? '<button class="more-btn" type="button">继续查看（还有 ' +
-          (currentTotal - currentHits.length) +
-          " 条，每次多显示 10 条）</button>"
-        : "");
+    bodyEl.replaceChildren(frag);
 
     bodyEl.querySelectorAll(".item").forEach(function (el) {
       el.addEventListener("click", function () {
         const idx = Number(el.getAttribute("data-idx"));
-        const hit = currentHits[idx];
-        if (!hit) return;
+        const picked = currentHits[idx];
+        if (!picked) return;
         // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
-        if (inputEl && hit.journal && hit.journal.name) inputEl.value = hit.journal.name;
-        renderHit(hit);
+        if (inputEl && picked.journal && picked.journal.name)
+          inputEl.value = picked.journal.name;
+        renderHit(picked);
       });
     });
 

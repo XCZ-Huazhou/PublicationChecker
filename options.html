@@ -23,42 +23,6 @@
       </section>
 
       <section class="card">
-        <h2>从本地更新</h2>
-        <p class="hint" id="local-hint">选择一份新的期刊数据，用它替换当前的期刊库。</p>
-        <button id="local-btn" type="button" class="primary">选择…</button>
-        <input id="local-file" type="file" hidden />
-      </section>
-
-      <section class="card">
-        <h2>从 GitHub 更新</h2>
-        <p class="hint" id="github-hint">
-          自动识别浏览器，从发布仓库拉取对应版本的期刊库，并在更新前告诉你版本号。
-        </p>
-        <label class="field" id="repo-field">
-          <span class="field-label">仓库（owner/repo）</span>
-          <input
-            id="repo"
-            type="text"
-            placeholder="owner/repo"
-            spellcheck="false"
-          />
-        </label>
-        <button id="github-btn" type="button" class="primary">检查更新</button>
-        <div id="github-ask" class="ask" hidden></div>
-        <div id="github-upgrade" class="ask ask-warn" hidden>
-          <p class="hint" id="github-upgrade-text"></p>
-          <a
-            id="github-upgrade-link"
-            class="upgrade-link"
-            href="#"
-            target="_blank"
-            rel="noreferrer"
-            >下载最新安装包</a
-          >
-        </div>
-      </section>
-
-      <section class="card">
         <h2>反馈与主页</h2>
         <p class="hint">
           遇到 bug 或有改进建议，到 GitHub 提 issue。打开时会自动带上扩展版本和数据库信息，方便定位。
@@ -79,7 +43,6 @@
       <div id="status" class="status" hidden></div>
     </div>
     <script src="lib/search-core.js"></script>
-    <script src="lib/zip-read.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

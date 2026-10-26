@@ -1,7 +1,7 @@
 'use strict';
 // PublicationChecker → Chrome 包一键构建
 // 运行：node build-chrome.js
-//   1) ../PublicationChecker-chrome.zip —— 发布用，上传到 Release（名字固定，插件「从 GitHub 更新」按这个名字取）
+//   1) ../PublicationChecker-chrome.zip —— 发布用，上传到 GitHub Release（名字固定、不带版本号）
 //   2) ../PublicationChecker-chrome/    —— 解压好的运行时目录，chrome://extensions 里「加载已解压的扩展程序」指向它
 // 两个产物都只含运行时文件（约 2.4 MB，其中 data/ 占 2.3 MB）：源数据 raw/、构建物料 tools/、
 // 仓库元数据 .git 都不进包。**不要直接加载仓库目录**，那样会把 raw/、.git 一起算进扩展体积。

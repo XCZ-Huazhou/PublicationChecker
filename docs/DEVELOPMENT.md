@@ -124,7 +124,7 @@ Chrome zip / Firefox xpi 安装包
 | 数据来源、字段取舍、收录范围 | `raw/*.csv` + `tools/build_db.py` | 脚本按列名读取，删行、删列、去掉整个来源都可以；改完重建 `.json.gz` |
 | 检索与排序（怎么搜、同分怎么排） | `lib/search-core.js`：`normName` / `candidateIds` / `makeScorer` / `searchJournals` | 打分表见上；与数据本身无关 |
 | 数据格式 | 见上方「rows 每行的位置」 | 每行 20 个位置，缺的字段填 `""` |
-| 打包与下载约定 | `options.js` 顶部的 `GITHUB_REPO` / `IDX_PATH` / `ISSN_PATH` / `CHUNK_RE` / `ASSET_RULES`，以及 `build-chrome.js` / `build-firefox.js` | 资产名固定，见下方「发版约定」 |
+| 打包与下载约定 | `options.js` 顶部的 `GITHUB_REPO`（反馈与仓库链接用），以及 `build-chrome.js` / `build-firefox.js` | 资产名固定，见下方「发版约定」 |
 
 ## 换库路线一：改源码 + 重新打包
 
@@ -135,41 +135,17 @@ Chrome zip / Firefox xpi 安装包
 3. `node build-chrome.js` / `node build-firefox.js` —— 打出 Chrome zip / Firefox xpi
 4. 重新加载扩展（`chrome://extensions` 里点刷新；Firefox 重装 xpi）
 
-## 换库路线二：选项页导入
+## 期刊库随包发布
 
-不碰代码、不用重装，**但只对扩展自身的页面生效**。
+0.1.6 起选项页只剩「数据库信息 + 反馈」两件事，不再提供本地导入或从 GitHub 拉数据的入口 —— 期刊库跟着扩展包发布，更新走应用商店（Firefox / Zen 由 AMO 推送）。
 
-入口：工具栏图标 →「关于 PublicationChecker」（或扩展详情页的「扩展程序选项」）。
+### 旧版覆盖库的退出口
 
-| 来源 | 说明 |
-|------|------|
-| 从本地更新 | **Chrome / Edge**：选解压后的扩展文件夹，整包读其中的三个 `.json.gz`；**Firefox**：选 `.xpi` 包，用 `lib/zip-read.js` 从包里解出同样这几个文件。也接受旧格式（含 `rows` 的单文件 `.json.gz` / `.json`） |
-| 从 GitHub 更新 | 由 `browserKind()` 按 UA 自动分流（`ASSET_RULES`：Firefox/Zen 取 `.xpi`，Chromium 取 `.zip`），从最新 Release 里取对应的包再解出数据。更新前会显示检测到的版本号和当前扩展版本，确认后才下载替换 |
+0.1.5 及更早版本可以从选项页导入覆盖库（IndexedDB：库名 `publication-checker`、store `db`、键 `override`，读写走 `readOverride()`）。这个入口已移除，`importDatabase()` 仍留在 `lib/search-core.js` 里，但界面上不再调用。
 
-**两条路都只换数据、不换扩展代码。** `readBundleFromZip()` / `readBundleFromDirectory()` 只取 `IDX_PATH`、`CHUNK_RE`、`ISSN_PATH` 三类条目，包里其余文件（所有脚本、样式、`manifest.json`、图标）读完即弃；浏览器也不提供让扩展覆盖自身程序文件的接口。想升级插件本身只能重新安装。安装包 2.4 MB 里数据占 2.27 MB、程序只占 0.12 MB，所以「下载了整包」很容易被误当成「更新了整个插件」—— 选项页的文案应当避免这种暗示。
+旧版本留下的覆盖库会一直压过内置数据，商店更新也换不掉它，所以选项页在检测到 `getDbInfo().source === "override"` 时多显示一行「改用内置数据」按钮，点击调用 `clearOverride()`（连带删掉所有 `chunk_N` 键）并通知后台重载。
 
-### 导入校验
-
-校验逻辑内联在 `lib/search-core.js` 的 `importDatabase()` 里（没有单独的校验函数），不过就直接抛错、不会把现有的库写坏：
-
-- v3 形态：必须有 `names` 与 `tokens`，必须至少有一个数据块
-- 旧格式：必须有 `rows` 数组
-- 两者都要求条数 ≥ `MIN_ROWS`（= 1000）
-
-### 生效范围（重要）
-
-导入的库存进 IndexedDB（库名 `publication-checker`、store `db`、键 `override`，读写走 `readOverride()`），**只有扩展自己的页面读得到** —— 工具栏弹窗、完整结果页、选项页、后台。
-
-**网页里右键弹出的浮层读不到它**，仍然用内置库。两个原因：
-
-1. content script 调 IndexedDB 用的是**宿主网页的源**，不是扩展的源（Chrome 官方文档 *Storage and cookies*：content scripts 里调 Web Storage 类 API，访问的是宿主页的数据）
-2. `content.js` 在页面空闲时就已经把内置库解压并缓存了，没人通知它换库
-
-所以导入之后，在网页里右键查询看到的还是旧数据，刷新页面也没用（源不同这一点不会变）。要让网页浮层也换库，只能走路线一。
-
-回到内置库：调 `clearOverride()`（会连带删掉所有 `chunk_N` 键），或卸载扩展重装 —— 扩展源的 IndexedDB 会一并清掉。
-
-> `clearOverride()` 虽然挂在 `root.PublicationChecker` 上导出了，但**选项页没有任何按钮调用它**（`options.html` 只有 `local-btn` / `github-btn` / `feedback-btn` 三个）。用户导入错了库，界面上无法撤销，只能卸载重装。这是个待补的 UI 缺口。
+> 覆盖库只对扩展自己的页面生效，网页浮层始终读内置库 —— content script 调 IndexedDB 用的是宿主网页的源，不是扩展的源。导入入口移除后这个不一致只存在于旧版遗留数据上，退出口就是为它留的。
 
 ## 构建脚本
 
@@ -225,7 +201,10 @@ Chrome 不能直接装 zip（不像 Firefox 能拖 xpi），所以 build-chrome 
 
 ## 发版约定
 
-把发布仓库写进 `options.js` 顶部的 `GITHUB_REPO = "owner/repo"`，选项页就会隐藏「仓库」输入框，用户点一下「检查更新」即可。
+两个发布渠道：
+
+- **Firefox / Zen**：把 `PublicationChecker-firefox.xpi` 传到 AMO，由商店推送更新。AMO 自 2025-11-03 起要求新扩展在清单里声明数据收集类型 —— 本扩展不收集、不上传任何用户数据，`build-firefox.js` 固定写入 `data_collection_permissions: { required: ["none"], optional: [] }`。
+- **Chrome / Edge**：把 `PublicationChecker-chrome.zip` 传到 GitHub Release，README 的安装说明指向它。
 
 Release 资产名**固定、不带版本号**：
 
@@ -234,25 +213,9 @@ PublicationChecker-chrome.zip     （Chrome / Edge）
 PublicationChecker-firefox.xpi    （Firefox / Zen）
 ```
 
-下载地址是 `releases/latest/download/<这个名字>` —— `latest` 由 GitHub 解析成最新 Release，不同 Release 的同名资产各自独立、互不冲突，所以**每次发版覆盖上传同一个名字**即可，代码不用跟着版本号变。
+`releases/latest/download/<这个名字>` 因此永远是同一个地址，README 和外部引用都不用跟着版本改；每次发版覆盖上传同名资产即可。版本号只写在 tag 与两份清单里。
 
-插件直接从包里取 `data/journals.idx.json.gz`、`data/chunks/*.json.gz` 与 `data/journals.issn.json.gz`，**不需要额外单独上传数据文件**。
-
-### 为什么资产名不能带版本号
-
-扩展内的「检查更新」先读 `https://github.com/<repo>/releases/latest` 的 302 重定向拿 **tag（= 版本号）**，再按 `assetCandidates()` 里写死的固定名字直接下载。**文件名与版本号是两件独立的事** —— 版本号只来自 tag。
-
-若资产名不符合约定，插件会退回 GitHub API 去问真实文件名（`assetCandidates()` 不试带 `v` 前缀或带版本号的变体）。功能照用，但会消耗一次 API 配额。实测：
-
-| 资产名 | GitHub API 调用 |
-|---|---|
-| `PublicationChecker-chrome.zip` | 0 次 ✓ |
-| `PublicationChecker-chrome-0.1.2.zip` | 1 次 ✗ |
-| `PublicationChecker-chrome-v0.1.2.zip` | 1 次 ✗ |
-
-**为什么必须避开 API**：GitHub 未认证 REST API 限额是 60 次/小时/IP，大量用户共用出口 IP（公司/学校 NAT、代理、VPN）时会被瞬间用光并返回 403。而 `github.com` 的发布页与 Release 下载**没有次数限制**。发布页读不出 tag 时（代理、网络问题）也会走一次 API，这是无法避免的回退。
-
-发版操作固定成：**打 tag（带版本号）→ 上传两个包（名字不带版本号）**。上传后本地 zip 删掉，GitHub 是唯一归档。
+发版操作固定成：**两份清单同步改版本号 → 打 tag（带版本号）→ 上传两个包（名字不带版本号）**。上传后本地 zip 删掉，GitHub 是唯一归档。
 
 ## 目录结构
 
@@ -264,9 +227,8 @@ PublicationChecker/
   background-mv2.js      # 右键菜单（MV2 后台页）
   content.js             # 当前页浮层
   popup.* / results.*    # 工具栏弹窗与完整结果页
-  options.*              # 选项页：期刊库更新（本地 / GitHub）
-  lib/search-core.js     # 离线检索核心（含覆盖库存储）
-  lib/zip-read.js        # 最小 zip 读取器（Firefox 从 xpi 取数用）
+  options.*              # 选项页：数据库信息与反馈入口
+  lib/search-core.js     # 离线检索核心（含旧版覆盖库的读取与清除）
   data/journals.idx.json.gz   # 检索索引（编译产物）
   data/chunks/                # 完整行，每块 500 行（编译产物）
   data/journals.issn.json.gz  # ISSN 表（按需加载，编译产物）
@@ -282,10 +244,10 @@ PublicationChecker/
 - Chrome Extension（Manifest V3 + V2 双清单，原生 JavaScript，无框架、无构建时依赖）
 - 数据构建：Python 3（纯标准库）
 - 打包：Node.js + `zip`
-- 存储：IndexedDB（仅存用户导入的覆盖库）
+- 存储：IndexedDB（仅存旧版导入的覆盖库）
 
 ## 已知约束
 
-- content script 读不到扩展源的 IndexedDB（见「生效范围」），这是平台限制，不是 bug
+- content script 读不到扩展源的 IndexedDB（见「旧版覆盖库的退出口」），这是平台限制，不是 bug
 - MV3 的 service worker 空闲 30 秒就被回收，所以 `content.js` 优先在页面内检索、库加载一次就常驻；走 background 的话每次都要重新解压数据库
-- 用户导入的覆盖库只活到扩展卸载为止；`clearOverride()` 可单独清掉
+- 旧版遗留的覆盖库只活到扩展卸载为止；`clearOverride()` 可单独清掉（选项页已接按钮）

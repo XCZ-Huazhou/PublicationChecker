@@ -61,7 +61,15 @@ fs.copyFileSync(path.join(STAGE, 'manifest-mv2.json'), path.join(STAGE, 'manifes
 fs.rmSync(path.join(STAGE, 'manifest-mv2.json'), { force: true });
 const mPath = path.join(STAGE, 'manifest.json');
 const m = JSON.parse(fs.readFileSync(mPath, 'utf8'));
-m.browser_specific_settings = { gecko: { id: GECKO_ID, strict_min_version: '115.0' } };
+// AMO 从 2025-11-03 起强制要求这个键：本插件只在本地检索 + 从 GitHub 下载公开数据包，
+// 不收集、不上传任何用户数据，所以如实声明 none。
+m.browser_specific_settings = {
+  gecko: {
+    id: GECKO_ID,
+    strict_min_version: '115.0',
+    data_collection_permissions: { required: ['none'], optional: [] },
+  },
+};
 fs.writeFileSync(mPath, JSON.stringify(m, null, 2) + '\n');
 
 // 3. 打包 xpi（zip 正斜杠）
