@@ -242,3 +242,25 @@ button:disabled {
   color: #b91c1c;
   font-weight: 700;
 }
+
+/* 「需要重新安装」提醒块里的一键下载入口（锚点做成按钮样式） */
+#github-upgrade .hint {
+  margin: 0 0 8px;
+}
+
+.upgrade-link {
+  display: inline-block;
+  border: 1px solid #2d5ac8;
+  background: #2d5ac8;
+  color: #fff;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.upgrade-link:hover {
+  border-color: #244ea8;
+  background: #244ea8;
+}

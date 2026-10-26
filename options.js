@@ -487,6 +487,34 @@ function hideAsk() {
 }
 
 /**
+ * 检测到更新版插件时提醒：本按钮只换期刊数据，插件代码要下载新包重新加载
+ * 才会升级（浏览器不允许扩展覆写自己的程序文件）。给一个一键下载入口。
+ */
+function showUpgradeNotice(repo, kind, tag, cur) {
+  const box = $("github-upgrade");
+  const link = $("github-upgrade-link");
+  const text = $("github-upgrade-text");
+  if (!box || !link || !text) return;
+  link.href =
+    "https://github.com/" +
+    repo +
+    "/releases/latest/download/" +
+    encodeURIComponent(assetCandidates(kind)[0]);
+  text.textContent =
+    "检测到插件新版本 " +
+    tag +
+    "（当前 v" +
+    (cur || "?") +
+    "）。本按钮只更新期刊数据，不更新插件代码；要升级插件请下载新包并重新加载。";
+  box.hidden = false;
+}
+
+function hideUpgradeNotice() {
+  const box = $("github-upgrade");
+  if (box) box.hidden = true;
+}
+
+/**
  * 在 GitHub 卡片里渲染内联确认区，等用户点按钮；返回 Promise<boolean>。
  * warn 为真时（远端 Release 比当前扩展更旧）整块和「判断」那行标警告色，
  * 主按钮也从「确认更新」改成「仍要更新」—— 免得用户没细看就点了。
@@ -525,6 +553,7 @@ function askInline(rows, warn) {
 async function onGithub() {
   clearStatus();
   hideAsk();
+  hideUpgradeNotice();
 
   const repo =
     GITHUB_REPO ||
@@ -578,7 +607,7 @@ async function onGithub() {
     const cmp = tag ? versionCmp(tag, cur) : 0;
     const verdict =
       cmp > 0
-        ? "→ 发现新版本"
+        ? "→ 发现新版本（本按钮只换期刊数据；插件本身要下载新包重新加载才会升级）"
         : cmp === 0
           ? "→ 版本与当前相同，可能只是数据有更新"
           : "⚠ 这个 Release 比当前扩展版本更旧";
@@ -604,9 +633,12 @@ async function onGithub() {
     rows.push([
       "操作",
       tag
-        ? "把期刊库更新到 " + esc(tag)
+        ? "仅把期刊库更新到 " + esc(tag) + "（插件代码不变）"
         : "直接下载最新包，版本号下载后从包内 manifest.json 读",
     ]);
+
+    if (cmp > 0) showUpgradeNotice(repo, kind, tag, cur);
+    else hideUpgradeNotice();
 
     const ok = await askInline(rows, cmp < 0);
     if (!ok) {
@@ -673,7 +705,12 @@ async function onGithub() {
         out.count +
         " 条，数据生成于 " +
         (out.builtAt ? fmtTime(out.builtAt) : "未知") +
-        "。",
+        "。" +
+        (cmp > 0
+          ? " 注意：这只换了期刊数据，插件本身仍是 v" +
+            cur +
+            "，新代码请下载新包重新加载。"
+          : ""),
       "ok"
     );
   } catch (err) {
