@@ -12,17 +12,7 @@
         <span class="logo">P</span>
         <div>
           <strong>PublicationChecker</strong>
-          <div class="hint">
-            期刊分区查询 ·
-            <a
-              id="repo-home"
-              class="repo-link"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
-              >GitHub 仓库</a
-            >
-          </div>
+          <div class="hint">期刊分区查询</div>
         </div>
         <span class="ver" id="ext-version"></span>
       </header>
@@ -69,11 +59,21 @@
       </section>
 
       <section class="card">
-        <h2>反馈问题</h2>
+        <h2>反馈与主页</h2>
         <p class="hint">
           遇到 bug 或有改进建议，到 GitHub 提 issue。打开时会自动带上扩展版本和数据库信息，方便定位。
         </p>
-        <button id="feedback-btn" type="button">到 GitHub 提 issue</button>
+        <div class="card-actions">
+          <button id="feedback-btn" type="button">到 GitHub 提 issue</button>
+          <a
+            id="repo-home"
+            class="repo-link-btn"
+            href="#"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub 仓库</a
+          >
+        </div>
       </section>
 
       <div id="status" class="status" hidden></div>

@@ -54,15 +54,31 @@ header .hint {
   font-size: 12px;
 }
 
-/* 页头的仓库入口 */
-.repo-link {
-  color: #2d5ac8;
-  font-weight: 600;
-  text-decoration: none;
+/* 反馈卡里的并排入口 */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.repo-link:hover {
-  text-decoration: underline;
+/* 仓库入口做成和按钮一致的外观 */
+.repo-link-btn {
+  display: inline-block;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.repo-link-btn:hover {
+  border-color: #c7d2fe;
+  background: #f8fafc;
 }
 
 .card {
