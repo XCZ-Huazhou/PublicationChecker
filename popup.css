@@ -249,3 +249,9 @@ button {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* 现在摊在主卡片上的那条：列表常驻，得看出上面显示的是谁 */
+.item.active {
+  border-color: #2d5ac8;
+  background: #eef2ff;
+}

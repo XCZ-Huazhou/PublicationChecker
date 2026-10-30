@@ -181,9 +181,31 @@ function renderJournal(j, query) {
 }
 
 function renderHits(hits, total) {
+  paint(hits, total, 0);
+}
+
+/**
+ * 主卡片 + 常驻的「其他匹配」列表（跟结果页一个样：点候选只换上面的主卡片，
+ * 列表不消失，所以想接着看别的直接点下一条，不用来回翻）。
+ * activeIdx = 现在摊开在主卡片上的那条，0 表示默认的第一条。
+ */
+function paint(hits, total, activeIdx) {
+  const n = total || hits.length;
+  const active = hits[activeIdx] ? activeIdx : 0;
+  const q0 = lastQuery; // 用户真正输入的那个词，回填之后还得能复原
+
   const frag = document.createDocumentFragment();
-  // 顶部那条是主结果，不编号；候选列表从「2.」开始
-  frag.appendChild(renderJournal(hits[0].journal, lastQuery));
+  frag.appendChild(renderJournal(hits[active].journal, lastQuery));
+
+  if (active > 0) {
+    const back = h("button", "link-btn", "← 回到第 1 条（" + q0 + "）");
+    back.type = "button";
+    back.addEventListener("click", function () {
+      $("q").value = q0;
+      paint(hits, total, 0);
+    });
+    frag.appendChild(back);
+  }
 
   const others = hits.slice(1);
   if (others.length) {
@@ -194,10 +216,11 @@ function renderHits(hits, total) {
       const jcr = j.jcr || {};
       const cas = j.cas || {};
       const xr = j.xr || {};
-      const item = h("div", "item");
-      item.dataset.idx = String(i + 1);
+      const idx = i + 1; // 在 hits 里的真实下标（第 0 条在主卡片上）
+      const item = h("div", "item" + (idx === active ? " active" : ""));
+      item.dataset.idx = String(idx);
       const itemName = h("div", "item-name");
-      itemName.appendChild(h("span", "idx", i + 2 + "."));
+      itemName.appendChild(h("span", "idx", idx + 1 + "."));
       itemName.appendChild(highlightNode(j.name, lastQuery));
       item.appendChild(itemName);
       item.appendChild(
@@ -219,7 +242,7 @@ function renderHits(hits, total) {
   }
 
   // 还有没显示的：给一个「继续查看」，点一次多取 10 条
-  const remaining = (total || hits.length) - hits.length;
+  const remaining = n - hits.length;
   if (remaining > 0) {
     const more = h("button", "more-btn", "继续查看（还有 " + remaining + " 条，每次多显示 10 条）");
     more.type = "button";
@@ -233,22 +256,25 @@ function renderHits(hits, total) {
   box.querySelectorAll(".item").forEach((el) => {
     el.addEventListener("click", () => {
       const idx = Number(el.dataset.idx);
-      const hit = hits[idx];
-      if (hit) {
-        // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
-        $("q").value = hit.journal.name;
-        $("result").replaceChildren(renderJournal(hit.journal, lastQuery));
-        // 进了详情页：使用提示和「共 N 条」都没用了，收起来腾出高度
-        $("tip").hidden = true;
-        $("status").hidden = false;
-        $("status").textContent =
-          "第 " + (idx + 1) + " 条 / 共 " + (total || hits.length) + " 条匹配";
-      }
+      if (!hits[idx]) return;
+      // 回填刊名方便接着改；想回原来的词点上面那条「回到第 1 条」
+      $("q").value = hits[idx].journal.name;
+      paint(hits, total, idx);
     });
   });
 
   const more = $("more");
   if (more) more.addEventListener("click", loadMore);
+
+  $("status").hidden = false;
+  $("status").textContent =
+    active > 0
+      ? "第 " + (active + 1) + " 条 / 共 " + n + " 条匹配"
+      : n > hits.length
+        ? "共 " + n + " 条匹配，按字母序显示前 " + hits.length + " 条 —— 继续输入可缩小范围"
+        : "共 " + n + " 条匹配";
+  // 出结果后收起使用提示：popup 高度有上限，提示会把第一个结果挤到折叠线后面
+  $("tip").hidden = true;
 }
 
 async function run() {
@@ -280,15 +306,6 @@ async function render() {
       return;
     }
     // 同分结果只能按字母序排，所以把命中总数讲清楚，引导继续输入缩小范围
-    $("status").hidden = false;
-    $("status").textContent =
-      res.total > res.hits.length
-        ? "共 " +
-          res.total +
-          " 条匹配，按字母序显示前 " +
-          res.hits.length +
-          " 条 —— 继续输入可缩小范围"
-        : "共 " + res.total + " 条匹配";
     renderHits(res.hits, res.total);
   } catch (err) {
     $("result").hidden = true;
@@ -336,3 +353,7 @@ $("db").addEventListener("click", () => {
   }
   window.close();
 });
+
+// 头部标出当前构建时间：浏览器加载的是哪一版，一眼就能看出来
+const hintEl = document.querySelector(".hint");
+if (hintEl && PublicationChecker.build) hintEl.textContent += " · " + PublicationChecker.build;

@@ -2,6 +2,10 @@ const $ = (id) => document.getElementById(id);
 const searchJournals = (q, n) => PublicationChecker.searchJournals(q, n);
 const cleanQuery = (q) => PublicationChecker.cleanQuery(q);
 
+const PAGE0 = 20; // 首屏条数
+const PAGE = 20; // 每次「继续查看」多取的条数
+let cur = { q: "", limit: PAGE0, total: 0, hits: [] };
+
 function h(tag, cls, text) {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -153,8 +157,9 @@ function renderBest(hit) {
   $("best").hidden = false;
 }
 
-function renderOthers(hits) {
-  if (!hits.length) {
+function renderOthers(hits, total) {
+  const shown = hits.length + 1; // 主结果那条也算已展示
+  if (!hits.length && total <= shown) {
     $("others").hidden = true;
     return;
   }
@@ -179,22 +184,35 @@ function renderOthers(hits) {
   });
 
   const frag = document.createDocumentFragment();
-  frag.appendChild(h("h3", null, "其他匹配（" + hits.length + "）"));
+  frag.appendChild(
+    h("h3", null, "其他匹配（" + hits.length + (total > shown ? " / 共 " + total + " 条" : "") + "）")
+  );
   frag.appendChild(list);
+
+  // 同分结果只能按字母序排，所以给一个「继续查看」把剩下的翻出来
+  const remaining = total - shown;
+  if (remaining > 0) {
+    const more = h("button", "more-btn", "继续查看（还有 " + remaining + " 条，每次多显示 " + PAGE + " 条）");
+    more.type = "button";
+    more.id = "more";
+    frag.appendChild(more);
+  }
+
   $("others").replaceChildren(frag);
   $("others").hidden = false;
   $("others").querySelectorAll(".item").forEach((el) => {
     el.addEventListener("click", () => {
       const idx = Number(el.dataset.idx);
       const hit = hits[idx];
-      if (hit) {
-        // 选中候选后，把顶部输入框换成这条刊名，方便接着改或核对
-        $("q").value = hit.journal.name;
-        renderBest(hit);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      if (!hit) return;
+      // 只把这条换成主结果：输入框保持用户查的那个词，
+      // 否则状态行写着「ecology」而框里是另一串长刊名，回车就搜歪了。
+      renderBest(hit);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
+  const more = $("more");
+  if (more) more.addEventListener("click", showMore);
 }
 
 /** status 只显示纯文本；spinner 为真时前面加转圈图标 */
@@ -225,26 +243,41 @@ async function run(raw) {
     $("others").hidden = true;
     return;
   }
+  cur = { q: q, limit: PAGE0, total: 0, hits: [] };
+  await render();
+}
 
-  setStatus("正在本地检索「" + q + "」…", true);
+/** 「继续查看」：每次多取 PAGE 条（整库 2 万多条，一次全铺会卡住页面） */
+async function showMore() {
+  if (!cur.q) return;
+  cur.limit += PAGE;
+  await render();
+}
+
+async function render() {
+  setStatus("正在本地检索「" + cur.q + "」…", true);
   $("best").hidden = true;
   $("others").hidden = true;
 
   try {
-    const res = await searchJournals(q, 12);
+    const res = await searchJournals(cur.q, cur.limit);
+    cur.total = res.total;
+    cur.hits = res.hits;
     const meta = res.meta || {};
     $("meta").textContent = meta.count
-      ? `本地库：${meta.count} 种期刊 · JCR ${meta.jcr} · 中科院 ${meta.cas} · 新锐 ${meta.xinrui} · 数据源 hitfyd/ShowJCR`
+      ? `本地库：${meta.count} 种期刊 · JCR ${meta.jcr} · 中科院 ${meta.cas} · 新锐 ${meta.xinrui} · 数据源 hitfyd/ShowJCR · 构建 ${PublicationChecker.build}`
       : "本地库已加载";
 
     if (!res.hits.length) {
-      setStatus("未找到与「" + q + "」匹配的期刊。可尝试完整英文刊名或 ISSN。");
+      setStatus("未找到与「" + cur.q + "」匹配的期刊。可尝试完整英文刊名或 ISSN。");
       return;
     }
 
-    setStatus("查询「" + q + "」命中 " + res.total + " 条，展示最相关的 " + res.hits.length + " 条。");
+    setStatus(
+      "查询「" + cur.q + "」命中 " + res.total + " 条，已展示 " + res.hits.length + " 条。"
+    );
     renderBest(res.hits[0]);
-    renderOthers(res.hits.slice(1));
+    renderOthers(res.hits.slice(1), res.total);
   } catch (err) {
     console.error(err);
     setStatus("检索失败：" + (err.message || err));

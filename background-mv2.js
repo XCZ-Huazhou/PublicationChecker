@@ -4,6 +4,8 @@
 
   var MENU_ID = "publication-checker-lookup";
   var api = typeof browser !== "undefined" && browser.runtime ? browser : chrome;
+  // MV2 的 tabs.executeScript 一次只认一个 file（files 数组是 MV3 的写法）
+  var CS_FILES = ["lib/search-core.js", "content.js"];
 
   function openFallbackPage(query) {
     var url =
@@ -37,8 +39,15 @@
   }
 
   ensureMenu();
-  api.runtime.onInstalled.addListener(ensureMenu);
-  api.runtime.onStartup.addListener(ensureMenu);
+  injectExistingTabs();
+  api.runtime.onInstalled.addListener(function () {
+    ensureMenu();
+    injectExistingTabs();
+  });
+  api.runtime.onStartup.addListener(function () {
+    ensureMenu();
+    injectExistingTabs();
+  });
 
   api.contextMenus.onClicked.addListener(function (info, tab) {
     if (info.menuItemId !== MENU_ID) return;
@@ -59,10 +68,55 @@
       tab.id,
       { type: "publication-checker:show", query: query },
       function () {
-        if (api.runtime.lastError) fallback();
+        if (!api.runtime.lastError) return;
+        // 页面层没在跑：补注入一次再试
+        injectInto(tab.id, function (ok) {
+          if (!ok) {
+            fallback();
+            return;
+          }
+          api.tabs.sendMessage(
+            tab.id,
+            { type: "publication-checker:show", query: query },
+            function () {
+              if (api.runtime.lastError) fallback();
+            }
+          );
+        });
       }
     );
   });
+
+  // 按顺序注入核心库和页面层，done(ok) 告诉调用方有没有注入成功
+  function injectInto(tabId, done) {
+    (function next(i) {
+      if (i >= CS_FILES.length) {
+        done(true);
+        return;
+      }
+      api.tabs.executeScript(tabId, { file: CS_FILES[i] }, function () {
+        if (api.runtime.lastError) {
+          done(false);
+          return;
+        }
+        next(i + 1);
+      });
+    })(0);
+  }
+
+  // 与 MV3 版一致：安装/启动时给已打开的标签页补注入页面层
+  function injectExistingTabs() {
+    if (!api.tabs.executeScript) return;
+    api.tabs.query({ url: ["http://*/*", "https://*/*"] }, function (tabs) {
+      if (api.runtime.lastError || !tabs) return;
+      tabs.forEach(function (t) {
+        if (t.id == null) return;
+        injectInto(t.id, function () {
+          /* 受限页注入不了就算了，右键时还有回退页 */
+        });
+      });
+    });
+  }
 
   api.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
     if (!msg || !msg.type) return false;

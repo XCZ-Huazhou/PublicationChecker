@@ -46,15 +46,33 @@ function ensureMenu() {
   return p;
 }
 
-async function injectIfNeeded(tabId) {
-  if (!api.scripting || !api.scripting.executeScript) return;
+async function injectContent(tabId) {
+  if (!api.scripting || !api.scripting.executeScript) return false;
   try {
     await api.scripting.executeScript({
       target: { tabId: tabId },
-      files: ["content.js"],
+      files: ["lib/search-core.js", "content.js"],
     });
+    return true;
   } catch (e) {
-    // ignore: already injected or restricted page
+    console.warn("[PublicationChecker] inject failed", tabId, (e && e.message) || e);
+    return false;
+  }
+}
+
+// Chrome 不像 Firefox：安装/启用/重载扩展时，不会给已经打开的标签页补注入
+// content script。那些页面里没有页面层，右键只能一路回退成新开页。这里对齐
+// Firefox：安装/启动时给现有标签页补注入（脚本自带守卫，重复无副作用）。
+async function injectExistingTabs() {
+  if (!api.scripting || !api.scripting.executeScript) return;
+  let tabs = [];
+  try {
+    tabs = await api.tabs.query({ url: ["http://*/*", "https://*/*"] });
+  } catch (e) {
+    return;
+  }
+  for (const t of tabs) {
+    if (t.id != null) await injectContent(t.id);
   }
 }
 
@@ -66,13 +84,20 @@ async function showInPage(tabId, query) {
     return await api.tabs.sendMessage(tabId, msg);
   } catch (e) {
     // 没收到（脚本没跑、页面受限）才补注入一次
-    await injectIfNeeded(tabId);
+    console.warn("[PublicationChecker] page not listening", tabId, (e && e.message) || e);
+    if (!(await injectContent(tabId))) throw e;
     return api.tabs.sendMessage(tabId, msg);
   }
 }
 
-api.runtime.onInstalled.addListener(ensureMenu);
-api.runtime.onStartup.addListener(ensureMenu);
+api.runtime.onInstalled.addListener(function () {
+  ensureMenu();
+  injectExistingTabs();
+});
+api.runtime.onStartup.addListener(function () {
+  ensureMenu();
+  injectExistingTabs();
+});
 
 api.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId !== MENU_ID) return;

@@ -169,7 +169,7 @@
 
   // 鼠标移开后的宽限时间。太短会打断「划出去选中输入框里的文字准备改」
   // 这类操作；鼠标中途移回来（mouseenter）会取消，所以放宽没有副作用。
-  const HIDE_DELAY = 500;
+  const HIDE_DELAY = 300;
 
   // 鼠标离开卡片就安排关闭；不看输入框焦点，也不管有没有提交查询
   function scheduleHide() {
@@ -571,7 +571,7 @@
     if (rect) lastRect = rect;
     if (!query) return;
     // 「选中刊名右键查询」只展示结果，不抢输入框焦点，
-    // 这样鼠标移开卡片 500ms 后仍会自动关闭；想改刊名点一下输入框即可。
+    // 这样鼠标移开卡片 300ms 后仍会自动关闭；想改刊名点一下输入框即可。
     lookup(query, null);
   }
 
@@ -585,12 +585,31 @@
     return { text: text, rect: rect };
   }
 
+  /**
+   * <input> / <textarea> 里的选区不走 document selection，selectionBox() 只会拿到
+   * 0×0 的空矩形（搜索框里选中刊名就是这个情况）。这时退到聚焦控件自身的矩形，
+   * 浮层至少贴着用户选字的那个框，而不是掉到屏幕中间。
+   */
+  function focusedFieldBox() {
+    const el = document.activeElement;
+    if (!el || el === document.body || el === document.documentElement) return null;
+    const tag = el.tagName;
+    const isField =
+      tag === "TEXTAREA" ||
+      (tag === "INPUT" && /^(text|search|url|email|tel|password)$/i.test(el.type || "")) ||
+      el.isContentEditable;
+    if (!isField) return null;
+    const rect = el.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    return rect;
+  }
+
   api().runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
     if (!msg || !msg.type) return false;
     if (msg.type === "publication-checker:show") {
       const q = PublicationCheckerQueryClean(msg.query);
       const info = selectionBox();
-      const rect = info ? info.rect : lastRect;
+      const rect = info ? info.rect : focusedFieldBox() || lastRect;
       openCard(rect, q);
       sendResponse({ ok: true });
       return true;
