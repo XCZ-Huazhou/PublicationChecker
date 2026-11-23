@@ -152,6 +152,19 @@
       scheduleHide();
     });
 
+    // 左键点卡片以外的地方立即关闭。捕获阶段监听，页面自己的 click 处理
+    // stopPropagation 也拦不住；卡片在 Shadow DOM 里，target 会被重定向成
+    // 宿主 div，所以用 composedPath 判断点击是否落在卡片内。
+    document.addEventListener(
+      "click",
+      function (e) {
+        if (!cardEl || !cardEl.classList.contains("on")) return;
+        if (e.composedPath().indexOf(cardEl) >= 0) return;
+        hideCard();
+      },
+      true
+    );
+
     shadow.appendChild(style);
     shadow.appendChild(rootEl);
     rootEl.appendChild(cardEl);
@@ -534,7 +547,9 @@
     // 优先在页面里查：库加载一次就常驻（后续查询 ~2ms）。
     // 走 background 的话，MV3 的 service worker 空闲 30 秒就被回收，
     // 每次右键都要重新解压 6MB 的库 —— 那才是卡顿的来源。
-    const local = localSearch();
+    // 但 file:// 本地页是 null/opaque 源，fetch 扩展资源被 WAR/CORS 挡
+    // （Failed to fetch），页面内检索不可用；改走 background（读自己源）。
+    const local = location.protocol === "file:" ? null : localSearch();
     if (local) {
       local
         .searchJournals(query, currentLimit)
